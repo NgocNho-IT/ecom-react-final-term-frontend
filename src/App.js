@@ -1,24 +1,67 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import HomePage from './pages/HomePage';
+import ProductDetailPage from './pages/ProductDetailPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
+import ProfilePage from './pages/ProfilePage';
+import OrdersPage from './pages/OrdersPage';
+import OrderDetailPage from './pages/OrderDetailPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
+import CategorySummaryPage from './pages/CategorySummaryPage';
+import CategoryPage from './pages/CategoryPage';
+import SearchPage from './pages/SearchPage';
+
+// NHÓM QUẢN TRỊ ADMIN (Đồng bộ theo urls.py của Django)
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import AddCategoryPage from './pages/AddCategoryPage';
+import EditCategoryPage from './pages/EditCategoryPage'; // Trang sửa danh mục
+import AddProductPage from './pages/AddProductPage';
+import EditProductPage from './pages/EditProductPage';   // Trang sửa sản phẩm
+import EditOrderPage from './pages/EditOrderPage';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Header />
+      <main style={{ minHeight: '80vh' }}>
+          <Routes>
+            {/* USER ROUTES */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/product/:id" element={<ProductDetailPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/update-password" element={<ChangePasswordPage />} /> 
+            <Route path="/orders" element={<OrdersPage />} />
+            <Route path="/order/:id" element={<OrderDetailPage />} />
+            <Route path="/categories" element={<CategorySummaryPage />} />
+            <Route path="/category/:id" element={<CategoryPage />} />
+            
+            {/* ADMIN ROUTES (Chuyển giao từ urls.py) */}
+            <Route path="/admin" element={<AdminDashboardPage />} />
+            
+            {/* Quản lý danh mục */}
+            <Route path="/admin/category/add" element={<AddCategoryPage />} />
+            <Route path="/admin/category/edit/:id" element={<EditCategoryPage />} />
+            
+            {/* Quản lý sản phẩm */}
+            <Route path="/admin/product/add" element={<AddProductPage />} />
+            <Route path="/admin/product/edit/:id" element={<EditProductPage />} />
+            
+            {/* Quản lý đơn hàng */}
+            <Route path="/admin/order/edit/:id" element={<EditOrderPage />} />
+          </Routes>
+      </main>
+      <Footer />
+    </Router>
   );
 }
 

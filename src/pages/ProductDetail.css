@@ -1,0 +1,42 @@
+.text-green { color: #198754 !important; }
+.bg-green { background-color: #198754 !important; color: white; }
+.border-green { border-color: #198754 !important; }
+.btn-green { background-color: #198754; color: white; border: none; transition: 0.3s; }
+.btn-green:hover { background-color: #146c43; color: white; }
+
+.price-block { background-color: #e8f5e9; border-radius: 8px; padding: 15px; border: 1px dashed #198754; }
+.price-main { font-size: 1.8rem; font-weight: bold; color: #dc3545; }
+.price-old { text-decoration: line-through; color: #6c757d; font-size: 1.1rem; }
+
+.variant-option { 
+    border: 1px solid #ced4da; 
+    border-radius: 5px; 
+    padding: 8px 12px; 
+    cursor: pointer; 
+    display: inline-block; 
+    margin: 0 5px 10px 0; 
+    transition: 0.2s; 
+}
+.variant-option:hover, .variant-option.active { 
+    border-color: #198754; 
+    background-color: #e8f5e9; 
+    color: #198754; 
+    font-weight: bold; 
+}
+
+.tech-specs th { width: 35%; background-color: #f8f9fa; font-weight: 600; }
+.color-dot { 
+    width: 15px; 
+    height: 15px; 
+    border-radius: 50%; 
+    display: inline-block; 
+    vertical-align: middle; 
+    border: 1px solid #ccc; 
+    margin-right: 5px; 
+}
+
+.related-card { transition: 0.3s; border: 1px solid #eee; }
+.related-card:hover { 
+    transform: translateY(-5px); 
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; 
+}
