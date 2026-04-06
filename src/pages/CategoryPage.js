@@ -1,23 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import API from '../services/api';
-import { getImageUrl } from '../utils/constants'; // Fix lỗi ảnh cổng 3000
+import { getImageUrl } from '../utils/constants';
 
 const CategoryPage = () => {
-    const { id } = useParams(); // Lấy ID từ URL
+    const { id } = useParams(); 
     const [products, setProducts] = useState([]);
-    const [categoryName, setCategoryName] = useState(''); // Tên danh mục (iPhone, Samsung...)
+    const [categoryName, setCategoryName] = useState('');
     const [loading, setLoading] = useState(true);
+
+    // --- STATES CHO PHÂN TRANG ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
+    // Reset về trang 1 nếu người dùng bấm sang Danh mục khác
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [id]);
 
     useEffect(() => {
         const fetchCategoryData = async () => {
             setLoading(true);
             try {
-                // Gọi API lấy sản phẩm và thông tin danh mục
-                const { data } = await API.get(`/products/category/${id}`);
+                // Thêm query ?page= vào API
+                const { data } = await API.get(`/products/category/${id}?page=${currentPage}`);
                 if (data.success) {
                     setProducts(data.products);
-                    setCategoryName(data.categoryName); // Lấy tên từ DB đổ vào đây
+                    setCategoryName(data.categoryName);
+                    setTotalPages(data.totalPages); // Nhận tổng số trang từ Backend
                 }
             } catch (error) {
                 console.error("Lỗi load danh mục:", error);
@@ -27,12 +37,16 @@ const CategoryPage = () => {
         };
 
         fetchCategoryData();
-        window.scrollTo(0, 0); // Cuộn lên đầu trang
-    }, [id]);
+    }, [id, currentPage]); // Gọi lại API khi id danh mục HOẶC currentPage thay đổi
 
     const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price || 0);
 
-    if (loading) return <div className="text-center mt-5 mb-5 py-5"><h3 className="text-success">Đang tải dữ liệu...</h3></div>;
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+        window.scrollTo({ top: 300, behavior: 'smooth' }); // Cuộn nhẹ lên đầu danh sách
+    };
+
+    if (loading && products.length === 0) return <div className="text-center mt-5 mb-5 py-5"><h3 className="text-success">Đang tải dữ liệu...</h3></div>;
 
     return (
         <>
@@ -44,11 +58,9 @@ const CategoryPage = () => {
                 `}
             </style>
 
-            {/* HEADER - HIỆN TÊN DANH MỤC TỪ DB */}
             <header className="bg-nnit-header py-5 shadow-sm">
                 <div className="container px-4 px-lg-5 my-5">
                     <div className="text-center text-white">
-                        {/* HIỆN TÊN DANH MỤC Ở ĐÂY */}
                         <h1 className="display-4 fw-bolder text-uppercase">{categoryName || "SẢN PHẨM"}</h1> 
                         <p className="lead fw-normal text-white-50 mb-0">Danh sách sản phẩm thuộc dòng {categoryName}</p>
                     </div>
@@ -60,14 +72,11 @@ const CategoryPage = () => {
                     <div className="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
 
                         {products.length > 0 ? products.map((product) => {
-                            // Lấy biến thể đầu tiên để hiện giá (tương đương .first trong Django)
                             const defaultVariant = product.variants && product.variants[0];
 
                             return (
                                 <div className="col mb-5" key={product._id}>
                                     <div className="card h-100 shadow-sm border-success border-opacity-25 product-card">
-                                        
-                                        {/* Badge Giảm Giá */}
                                         {defaultVariant?.isSale && (
                                             <div className="badge bg-danger text-white position-absolute" 
                                                  style={{ top: '0.5rem', right: '0.5rem', padding: '0.5em 0.8em', fontSize: '0.85rem', zIndex: 1 }}>
@@ -76,7 +85,6 @@ const CategoryPage = () => {
                                         )}
 
                                         <Link to={`/product/${product._id}`}>
-                                            {/* DÙNG getImageUrl ĐỂ FIX ẢNH CỔNG 3000 */}
                                             <img 
                                                 className="card-img-top p-3" 
                                                 src={getImageUrl(product.image)} 
@@ -131,6 +139,36 @@ const CategoryPage = () => {
                         )}
 
                     </div> 
+
+                    {/* KHU VỰC NÚT BẤM PHÂN TRANG */}
+                    {totalPages > 0 && (
+                        <div className="d-flex justify-content-center mt-4">
+                            <nav aria-label="Page navigation">
+                                <ul className="pagination pagination-lg shadow-sm rounded-pill overflow-hidden">
+                                    <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                                        <button className="page-link text-success fw-bold" onClick={() => handlePageChange(currentPage - 1)}>
+                                            &laquo; Trước
+                                        </button>
+                                    </li>
+                                    {[...Array(totalPages)].map((_, index) => (
+                                        <li key={index} className={`page-item ${currentPage === index + 1 ? 'active' : ''}`}>
+                                            <button 
+                                                className={`page-link fw-bold ${currentPage === index + 1 ? 'bg-success border-success text-white' : 'text-success'}`}
+                                                onClick={() => handlePageChange(index + 1)}
+                                            >
+                                                {index + 1}
+                                            </button>
+                                        </li>
+                                    ))}
+                                    <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                                        <button className="page-link text-success fw-bold" onClick={() => handlePageChange(currentPage + 1)}>
+                                            Sau &raquo;
+                                        </button>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    )}
                 </div>
             </section>
         </>

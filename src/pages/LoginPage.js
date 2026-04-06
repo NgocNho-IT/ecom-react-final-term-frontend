@@ -17,8 +17,8 @@ const LoginPage = () => {
         try {
             const { data } = await API.post('/users/login', { email, password });
             if (data.success) {
-                login(data); // Lưu vào Context
-                navigate('/'); // Chuyển về trang chủ
+                login(data);
+                navigate('/');
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Có lỗi xảy ra khi đăng nhập');

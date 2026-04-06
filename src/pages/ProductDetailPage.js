@@ -4,7 +4,6 @@ import { AuthContext } from '../context/AuthContext';
 import API from '../services/api'; 
 import './ProductDetail.css';
 
-// KHAI BÁO URL BACKEND ĐỂ GỌI ẢNH ĐÚNG CỔNG 5000
 const BACKEND_URL = "http://localhost:5000";
 
 const ProductDetailPage = () => {
@@ -49,43 +48,47 @@ const ProductDetailPage = () => {
     useEffect(() => {
         setLoading(true);
         fetchProductDetail();
-        window.scrollTo(0, 0); // Cuộn lên đầu trang khi đổi sản phẩm
+        window.scrollTo(0, 0);
     }, [id]);
+
+    // Khi đổi Variant, nếu số lượng đang chọn lớn hơn tồn kho mới thì reset về 1
+    useEffect(() => {
+        if (selectedVariant && quantity > selectedVariant.stock) {
+            setQuantity(selectedVariant.stock === 0 ? 0 : 1);
+        }
+    }, [selectedVariant]);
 
     const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price || 0);
 
     const handleAddToCart = async () => {
-    if (!user) {
-        alert("Vui lòng đăng nhập để mua hàng!");
-        navigate('/login');
-        return;
-    }
-
-    try {
-        // 1. Gọi API thêm vào giỏ hàng
-        const response = await API.post('/cart/add', { 
-            productId: product._id,
-            variantId: selectedVariant._id, 
-            quantity: quantity 
-        });
-
-        // 2. KIỂM TRA NẾU THÀNH CÔNG THÌ PHÁT TÍN HIỆU
-        if (response.data.success) {
-            
-            // CHỖ QUAN TRỌNG NHẤT: Phát tín hiệu cho Header biết để nhảy số ngay lập tức
-            window.dispatchEvent(new Event('cartUpdated')); 
-
-            // Hiện thông báo (Toast) cho người dùng
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 3000);
-            
-            console.log("--- Đã thêm hàng và gửi tín hiệu cập nhật Badge! ---");
+        if (!user) {
+            alert("Vui lòng đăng nhập để mua hàng!");
+            navigate('/login');
+            return;
         }
-    } catch (error) {
-        console.error("Lỗi thêm vào giỏ:", error);
-        alert(error.response?.data?.message || "Lỗi khi thêm vào giỏ hàng!");
-    }
-};
+
+        if (quantity > selectedVariant.stock) {
+            alert(`Số lượng vượt quá tồn kho (Chỉ còn ${selectedVariant.stock} sản phẩm).`);
+            return;
+        }
+
+        try {
+            const response = await API.post('/cart/add', { 
+                productId: product._id,
+                variantId: selectedVariant._id, 
+                quantity: quantity 
+            });
+
+            if (response.data.success) {
+                window.dispatchEvent(new Event('cartUpdated')); 
+                setShowToast(true);
+                setTimeout(() => setShowToast(false), 3000);
+            }
+        } catch (error) {
+            console.error("Lỗi thêm vào giỏ:", error);
+            alert(error.response?.data?.message || "Lỗi khi thêm vào giỏ hàng!");
+        }
+    };
 
     const handleReviewSubmit = async (e) => {
         e.preventDefault();
@@ -123,7 +126,6 @@ const ProductDetailPage = () => {
     return (
         <div className="container mt-4 mb-5">
             <div className="row">
-                {/* ẢNH SẢN PHẨM - ĐÃ NỐI BACKEND_URL */}
                 <div className="col-md-5 mb-4">
                     <div className="card border-green shadow-sm text-center p-3 rounded-4 bg-white">
                         <img 
@@ -136,7 +138,6 @@ const ProductDetailPage = () => {
                     </div>
                 </div>
 
-                {/* THÔNG TIN & CHỌN MUA */}
                 <div className="col-md-7">
                     <h2 className="text-dark fw-bold">{product.name}</h2>
                     
@@ -173,19 +174,46 @@ const ProductDetailPage = () => {
                         </div>
                     </div>
 
+                    {/* SỬA LOGIC SỐ LƯỢNG Ở ĐÂY */}
                     <div className="row align-items-center mb-3">
                         <div className="col-auto"><label className="fw-bold text-secondary">Số lượng:</label></div>
                         <div className="col-auto">
-                            <select className="form-select border-green rounded-pill" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))}>
-                                {[1, 2, 3, 4, 5].map(num => <option key={num} value={num}>{num}</option>)}
-                            </select>
+                            <input 
+                                type="number" 
+                                className="form-control border-green rounded-pill text-center fw-bold" 
+                                style={{ width: '90px' }}
+                                min="1" 
+                                max={selectedVariant.stock > 0 ? selectedVariant.stock : 1}
+                                value={quantity} 
+                                onChange={(e) => {
+                                    let val = Number(e.target.value);
+                                    if (val > selectedVariant.stock) val = selectedVariant.stock; // Khóa giới hạn Max
+                                    if (val < 1) val = 1; // Khóa giới hạn Min
+                                    setQuantity(val);
+                                }}
+                                disabled={selectedVariant.stock === 0}
+                            />
+                        </div>
+                        <div className="col-auto">
+                            <span className="text-muted small">
+                                {selectedVariant.stock > 0 ? `(Còn ${selectedVariant.stock} sản phẩm)` : <span className="text-danger fw-bold badge bg-danger text-white">HẾT HÀNG</span>}
+                            </span>
                         </div>
                     </div>
 
                     <div className="d-grid gap-2 d-md-flex mt-4">
                         {user ? (
-                            <button type="button" className="btn btn-green btn-lg px-5 fw-bold shadow-sm rounded-pill" onClick={handleAddToCart}>
-                                <i className="bi bi-cart-plus me-2"></i> THÊM VÀO GIỎ HÀNG
+                            <button 
+                                type="button" 
+                                className={`btn ${selectedVariant.stock === 0 ? 'btn-secondary' : 'btn-green'} btn-lg px-5 fw-bold shadow-sm rounded-pill`} 
+                                onClick={handleAddToCart}
+                                disabled={selectedVariant.stock === 0}
+                            >
+                                {selectedVariant.stock === 0 ? (
+                                    <><i className="bi bi-x-circle me-2"></i> TẠM HẾT HÀNG</>
+                                ) : (
+                                    <><i className="bi bi-cart-plus me-2"></i> THÊM VÀO GIỎ HÀNG</>
+                                )}
                             </button>
                         ) : (
                             <Link to="/login" className="btn btn-warning btn-lg px-5 fw-bold shadow-sm text-dark rounded-pill">
@@ -196,7 +224,7 @@ const ProductDetailPage = () => {
                 </div>
             </div>
 
-            {/* SẢN PHẨM TƯƠNG TỰ - ĐÃ NỐI BACKEND_URL */}
+            {/* BLOCK CÓ THỂ BẠN CŨNG THÍCH, MÔ TẢ, SPECS, YOUTUBE VÀ BÌNH LUẬN GIỮ NGUYÊN */}
             <div className="row mt-5">
                 <div className="col-12">
                     <h3 className="fw-bold text-success mb-4 border-bottom pb-2"><i className="bi bi-stars me-2"></i>CÓ THỂ BẠN CŨNG THÍCH</h3>
@@ -224,7 +252,6 @@ const ProductDetailPage = () => {
                 </div>
             </div>
 
-            {/* THÔNG TIN CHI TIẾT & YOUTUBE */}
             <div className="row mt-5">
                 <div className="col-md-7 mb-4">
                     <div className="card border-0 shadow-sm h-100 rounded-4 overflow-hidden">
@@ -250,7 +277,6 @@ const ProductDetailPage = () => {
                 </div>
             </div>
 
-            {/* VIDEO REVIEW */}
             {(product.youtubeId || product.youtube_id) && (
                 <div className="row mt-2 mb-4">
                     <div className="col-12">
@@ -265,8 +291,6 @@ const ProductDetailPage = () => {
                     </div>
                 </div>
             )}
-
-            {/* HỎI ĐÁP & ĐÁNH GIÁ */}
             <div className="row mt-4">
                 <div className="col-12">
                     <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
@@ -347,8 +371,6 @@ const ProductDetailPage = () => {
                     </div>
                 </div>
             </div>
-
-            {/* TOAST THÀNH CÔNG */}
             {showToast && (
                 <div className="toast-container position-fixed bottom-0 end-0 p-3">
                     <div className="toast show align-items-center text-white bg-success border-0 rounded-pill shadow-lg">

@@ -10,7 +10,6 @@ const EditCategoryPage = () => {
     useEffect(() => {
         const fetchCategory = async () => {
             try {
-                // Tận dụng API lấy danh mục để lấy tên cũ
                 const { data } = await API.get('/products/categories');
                 const currentCat = data.categories.find(c => c._id === id);
                 if (currentCat) setName(currentCat.name);
@@ -59,4 +58,4 @@ const EditCategoryPage = () => {
     );
 };
 
-export default EditCategoryPage; // Quan trọng: Dòng này sửa lỗi 'module has no exports'
+export default EditCategoryPage;

@@ -9,13 +9,11 @@ const RegisterPage = () => {
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState(''); // Thêm ô xác nhận
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
-
-    // HÀM KIỂM TRA VALIDATE FRONEND
     const validateForm = () => {
         if (password.length < 8) {
             return 'Mật khẩu phải chứa ít nhất 8 ký tự.';
@@ -26,18 +24,15 @@ const RegisterPage = () => {
         if (password !== confirmPassword) {
             return 'Nhập lại mật khẩu không khớp. Vui lòng kiểm tra lại.';
         }
-        // Kiểm tra số điện thoại (Chỉ cho phép số, độ dài 9-11)
         if (!/^\d{9,11}$/.test(phone)) {
             return 'Số điện thoại không hợp lệ.';
         }
-        return null; // Không có lỗi
+        return null;
     };
 
     const submitHandler = async (e) => {
         e.preventDefault();
         setError('');
-
-        // Kiểm tra Frontend trước khi gửi API
         const validationError = validateForm();
         if (validationError) {
             setError(validationError);
@@ -66,7 +61,6 @@ const RegisterPage = () => {
 
                     <div className="card auth-card" style={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 30px rgba(25, 135, 84, 0.1)' }}>
                         <div className="card-body p-4 p-md-5">
-                            {/* KHỐI HIỂN THỊ LỖI (Giống {{ field.errors }} của Django) */}
                             {error && (
                                 <div className="alert alert-danger py-2 small fw-bold">
                                     <i className="bi bi-exclamation-triangle-fill me-2"></i>
@@ -105,7 +99,6 @@ const RegisterPage = () => {
                                     </ul>
                                 </div>
 
-                                {/* Ô XÁC NHẬN MẬT KHẨU */}
                                 <div className="mb-4">
                                     <label className="form-label fw-bold text-dark small ms-1">Xác nhận mật khẩu</label>
                                     <input type="password" className="form-control" style={{ borderRadius: '10px' }} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />

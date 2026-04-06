@@ -23,7 +23,7 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    // Tự động lấy số lượng khi đăng nhập
+
     useEffect(() => {
         fetchCartCount();
     }, [user]);

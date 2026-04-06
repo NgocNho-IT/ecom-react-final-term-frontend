@@ -30,7 +30,7 @@ const OrdersPage = () => {
                 <div className="container px-4 px-lg-5 my-5">
                     <div className="text-center text-white">
                         <h1 className="display-4 fw-bolder">Lịch sử mua hàng</h1>
-                        <p className="lead fw-normal text-white-50 mb-0">Quản lý các đơn hàng của bạn tại UDA Store</p>
+                        <p className="lead fw-normal text-white-50 mb-0">Quản lý các đơn hàng của bạn tại NNIT Store</p>
                     </div>
                 </div>
             </header>

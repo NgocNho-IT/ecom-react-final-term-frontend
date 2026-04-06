@@ -5,13 +5,11 @@ import API from '../services/api';
 const Footer = () => {
     const [categories, setCategories] = useState([]);
 
-    // Lấy danh mục từ Database để hiển thị link chuẩn
     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 const { data } = await API.get('/products/categories');
                 if (data.success) {
-                    // Chỉ lấy tối đa 5 danh mục để tránh tràn Footer
                     setCategories(data.categories.slice(0, 5));
                 }
             } catch (error) {
@@ -25,7 +23,6 @@ const Footer = () => {
         <footer className="bg-success text-white pt-5 pb-4 mt-5 shadow-lg">
             <div className="container text-center text-md-start">
                 <div className="row">
-                    {/* CỘT 1: GIỚI THIỆU */}
                     <div className="col-md-3 col-lg-3 col-xl-3 mx-auto mt-3">
                         <h5 className="text-uppercase mb-4 fw-bold text-white">NNIT SHOP</h5>
                         <p className="small text-light" style={{ lineHeight: '1.8' }}>
@@ -39,8 +36,6 @@ const Footer = () => {
                             <a href="https://github.com" className="text-white me-3 transition-icon"><i className="bi bi-github fs-5"></i></a>
                         </div>
                     </div>
-
-                    {/* CỘT 2: SẢN PHẨM (DYNAMIC TỪ DB) */}
                     <div className="col-md-2 col-lg-2 col-xl-2 mx-auto mt-3">
                         <h6 className="text-uppercase mb-4 fw-bold text-white">Danh Mục</h6>
                         {categories.length > 0 ? categories.map((cat) => (
@@ -54,8 +49,6 @@ const Footer = () => {
                         )}
                         <p><Link to="/categories" className="text-warning text-decoration-none small fw-bold">Tất cả sản phẩm</Link></p>
                     </div>
-
-                    {/* CỘT 3: HỖ TRỢ */}
                     <div className="col-md-2 col-lg-2 col-xl-2 mx-auto mt-3">
                         <h6 className="text-uppercase mb-4 fw-bold text-white">Chính Sách</h6>
                         <p><Link to="/baohanh" className="text-light text-decoration-none small hover-link">Chính sách bảo hành</Link></p>
@@ -64,7 +57,6 @@ const Footer = () => {
                         <p><Link to="/thanhtoan" className="text-light text-decoration-none small hover-link">Hình thức thanh toán</Link></p>
                     </div>
 
-                    {/* CỘT 4: LIÊN HỆ (INFO NHỚ) */}
                     <div className="col-md-4 col-lg-3 col-xl-3 mx-auto mt-3">
                         <h6 className="text-uppercase mb-4 fw-bold text-white">Liên Hệ</h6>
                         <p className="small text-light"><i className="bi bi-person-fill me-2"></i> Đặng Ngọc Nhớ</p>
@@ -76,11 +68,10 @@ const Footer = () => {
 
                 <hr className="mb-4 mt-4 border-light opacity-25" />
 
-                {/* DÒNG BẢN QUYỀN */}
                 <div className="row align-items-center">
                     <div className="col-md-7 col-lg-8 text-md-start">
                         <p className="text-light small mb-0">Copyright © 2026 All rights reserved by:
-                            <a href="#" className="text-warning text-decoration-none fw-bold ms-1">NNIT Shop - Đặng Ngọc Nhớ</a>
+                            <a href="#" className="text-warning text-decoration-none fw-bold ms-1">NNIT Shop - IT24C Team</a>
                         </p>
                     </div>
                     <div className="col-md-5 col-lg-4 text-center text-md-end mt-3 mt-md-0">
@@ -90,8 +81,7 @@ const Footer = () => {
                     </div>
                 </div>
             </div>
-
-            {/* CSS INLINE ĐỂ FOOTER XỊN HƠN */}
+            
             <style>
                 {`
                     .hover-link:hover { color: #ffc107 !important; padding-left: 5px; transition: 0.3s; }

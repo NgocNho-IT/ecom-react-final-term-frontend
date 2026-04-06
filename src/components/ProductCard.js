@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 const ProductCard = ({ product }) => {
     const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price);
 
-    // Lấy cấu hình đầu tiên làm giá mặc định để hiển thị ngoài thẻ (Giống thẻ {% with v=p.variants.first %} của Django)
+    
     const defaultVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
 
     return (

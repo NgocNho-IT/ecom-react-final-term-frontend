@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import API from '../services/api';
 import { AuthContext } from '../context/AuthContext';
-import { getImageUrl } from '../utils/constants'; // FIX 1: Thêm cái này để hết vỡ ảnh
+import { getImageUrl } from '../utils/constants'; 
 
 const CartPage = () => {
     const [cartItems, setCartItems] = useState([]);
@@ -10,7 +10,6 @@ const CartPage = () => {
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    // Fetch giỏ hàng khi load trang
     useEffect(() => {
         if (!user) {
             navigate('/login');
@@ -32,10 +31,8 @@ const CartPage = () => {
         }
     };
 
-    // Hàm định dạng tiền
     const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price);
 
-    // Tính tổng tiền dựa trên các item trong state
     const calculateTotal = () => {
         return cartItems.reduce((total, item) => {
             const variant = item.productId?.variants?.find(v => v._id === item.variantId);
@@ -44,28 +41,22 @@ const CartPage = () => {
             return total + (price * item.quantity);
         }, 0);
     };
-
-    // Cập nhật số lượng
+  
     const handleUpdateQuantity = async (variantId, newQuantity) => {
         try {
             await API.put('/cart/update', { variantId, quantity: newQuantity });
             setCartItems(cartItems.map(item => item.variantId === variantId ? { ...item, quantity: newQuantity } : item));
-            
-            // FIX 2: Phát tín hiệu để Header nhảy số đỏ ngay lập tức
             window.dispatchEvent(new Event('cartUpdated')); 
         } catch (error) {
             alert("Lỗi cập nhật số lượng!");
         }
     };
 
-    // Xóa sản phẩm
     const handleRemoveItem = async (variantId) => {
         if(window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ?")) {
             try {
                 await API.delete(`/cart/remove/${variantId}`);
                 setCartItems(cartItems.filter(item => item.variantId !== variantId));
-                
-                // FIX 3: Phát tín hiệu để Header nhảy số đỏ ngay lập tức
                 window.dispatchEvent(new Event('cartUpdated')); 
             } catch (error) {
                 alert("Lỗi xóa sản phẩm!");
@@ -77,7 +68,6 @@ const CartPage = () => {
 
     return (
         <>
-            {/* GIỮ NGUYÊN HEADER CŨ */}
             <header className="bg-success py-5">
                 <div className="container px-4 px-lg-5 my-5">
                     <div className="text-center text-white">
@@ -92,7 +82,6 @@ const CartPage = () => {
                     <div className="row justify-content-center">
                         <div className="col-lg-10">
                             {cartItems.map((item) => {
-                                // Tìm biến thể (variant) tương ứng trong sản phẩm
                                 const variant = item.productId?.variants?.find(v => v._id === item.variantId);
                                 if (!variant) return null;
 
@@ -100,7 +89,6 @@ const CartPage = () => {
                                     <div key={item.variantId} className="card mb-4 shadow-sm border-success border-opacity-25">
                                         <div className="row g-0 align-items-center">
                                             <div className="col-md-3 text-center">
-                                                {/* FIX 4: Dùng getImageUrl cho ảnh sản phẩm */}
                                                 <img 
                                                     src={getImageUrl(item.productId.image)} 
                                                     className="img-fluid rounded-start p-3" 
@@ -131,17 +119,26 @@ const CartPage = () => {
                                                         <div className="col-auto">
                                                             <label className="fw-bold">Số lượng:</label>
                                                         </div>
-                                                        <div className="col-auto">
-                                                            <select 
-                                                                className="form-select form-select-sm border-success" 
+                                                        {/* SỬA LOGIC SỐ LƯỢNG Ở ĐÂY */}
+                                                        <div className="col-auto d-flex align-items-center gap-2">
+                                                            <input 
+                                                                type="number" 
+                                                                className="form-control form-control-sm border-success text-center fw-bold" 
+                                                                style={{ width: '70px' }}
+                                                                min="1" 
+                                                                max={variant.stock > 0 ? variant.stock : 1}
                                                                 value={item.quantity}
-                                                                onChange={(e) => handleUpdateQuantity(item.variantId, Number(e.target.value))}
-                                                            >
-                                                                {[1,2,3,4,5].map(num => (
-                                                                    <option key={num} value={num}>{num}</option>
-                                                                ))}
-                                                            </select>
+                                                                onChange={(e) => {
+                                                                    let val = Number(e.target.value);
+                                                                    if (val > variant.stock) val = variant.stock;
+                                                                    if (val < 1) val = 1;
+                                                                    handleUpdateQuantity(item.variantId, val);
+                                                                }}
+                                                                disabled={variant.stock === 0}
+                                                            />
+                                                            {variant.stock === 0 && <span className="badge bg-danger">Hết hàng</span>}
                                                         </div>
+
                                                         <div className="col-auto ms-auto">
                                                             <button onClick={() => handleRemoveItem(item.variantId)} className="btn btn-sm btn-outline-danger delete-product">
                                                                 <i className="bi bi-trash"></i> Xóa
@@ -155,7 +152,6 @@ const CartPage = () => {
                                 );
                             })}
 
-                            {/* GIỮ NGUYÊN PHẦN TỔNG TIỀN CŨ */}
                             <div className="card shadow-sm border-0 bg-light mt-4">
                                 <div className="card-body p-4 text-end">
                                     <h4 className="mb-3">Tổng thanh toán: <span className="text-danger fw-bold ms-2">{formatPrice(calculateTotal())} ₫</span></h4>

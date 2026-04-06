@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../services/api';
 
-// KHAI BÁO URL BACKEND ĐỂ GỌI ẢNH ĐÚNG CỔNG 5000
 const BACKEND_URL = "http://localhost:5000";
 
 const HomePage = () => {
@@ -10,14 +9,20 @@ const HomePage = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // --- STATES CHO PHÂN TRANG ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
+    // Gắn currentPage vào mảng dependencies để hàm chạy lại mỗi khi đổi trang
     useEffect(() => {
         const fetchHomeData = async () => {
             try {
-                // Gọi API lấy dữ liệu trang chủ
-                const { data } = await API.get('/products/home');
+                // Truyền query ?page= xuống Backend
+                const { data } = await API.get(`/products/home?page=${currentPage}`);
                 if (data.success) {
                     setSaleProducts(data.saleProducts);
                     setProducts(data.products);
+                    setTotalPages(data.totalPages); // Cập nhật tổng số trang
                 }
                 setLoading(false);
             } catch (error) {
@@ -27,21 +32,26 @@ const HomePage = () => {
         };
 
         fetchHomeData();
-    }, []);
+    }, [currentPage]);
 
-    // Hàm định dạng tiền tệ
     const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price || 0);
+
+    // Hàm đổi trang và tự động cuộn màn hình lên đầu khu vực sản phẩm
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+        window.scrollTo({ top: 600, behavior: 'smooth' }); // Cuộn nhẹ lên danh sách SP
+    };
 
     if (loading) return <div className="text-center mt-5 mb-5"><h3 className="text-success">Đang tải cửa hàng...</h3></div>;
 
     return (
         <>
-            {/* CAROUSEL KHUYẾN MÃI (Nối link ảnh cổng 5000) */}
+            {/* CAROUSEL GIẢM GIÁ */}
             <div id="saleCarousel" className="carousel slide bg-success py-5 shadow-sm" data-bs-ride="carousel">
                 <div className="carousel-inner">
                     {saleProducts.length > 0 ? (
                         saleProducts.map((p, index) => {
-                            const v = p.variants && p.variants[0]; // Kiểm tra biến thể
+                            const v = p.variants && p.variants[0];
                             return (
                                 <div key={p._id} className={`carousel-item ${index === 0 ? 'active' : ''}`}>
                                     <div className="container">
@@ -61,11 +71,10 @@ const HomePage = () => {
                                                 <Link to={`/product/${p._id}`} className="btn btn-light btn-lg rounded-pill px-5 fw-bold text-success shadow">MUA NGAY</Link>
                                             </div>
                                             <div className="col-md-6 d-none d-md-block text-center">
-                                                {/* CHỖ QUAN TRỌNG: Nối chuỗi BACKEND_URL cho Carousel */}
                                                 <img 
                                                     src={`${BACKEND_URL}/${p.image}`} 
                                                     className="img-fluid" 
-                                                    style={{ maxHeight: '350px', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.2))', objectFit: 'contain' }} 
+                                                    style={{ height: '350px', width: '100%', objectFit: 'contain', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.2))' }} 
                                                     alt={p.name} 
                                                     onError={(e) => { e.target.src = "https://via.placeholder.com/350x350?text=NNIT+Shop"; }}
                                                 />
@@ -97,12 +106,12 @@ const HomePage = () => {
                 )}
             </div>
 
-            {/* DANH SÁCH TOÀN BỘ SẢN PHẨM */}
+            {/* DANH SÁCH SẢN PHẨM CÓ PHÂN TRANG */}
             <section className="py-5 bg-light">
                 <div className="container px-4 px-lg-5 mt-5">
                     <h3 className="fw-bold text-dark mb-4 border-start border-success border-5 ps-3">DANH SÁCH SẢN PHẨM</h3>
+                    
                     <div className="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
-
                         {products.map(product => {
                             const defaultVariant = product.variants && product.variants[0];
 
@@ -110,7 +119,6 @@ const HomePage = () => {
                                 <div className="col mb-5" key={product._id}>
                                     <div className="card h-100 shadow-sm border-0 product-card rounded-4 overflow-hidden" style={{ transition: 'all 0.3s ease' }}>
                                         
-                                        {/* Badge Giảm Giá */}
                                         {defaultVariant?.isSale && (
                                             <div className="badge bg-danger text-white position-absolute" 
                                                  style={{ top: '0.8rem', right: '0.8rem', padding: '0.5em 0.8em', fontSize: '0.75rem', zIndex: 1, borderRadius: '8px' }}>
@@ -119,7 +127,6 @@ const HomePage = () => {
                                         )}
 
                                         <Link to={`/product/${product._id}`}>
-                                            {/* CHỖ QUAN TRỌNG: Nối chuỗi BACKEND_URL cho danh sách sản phẩm */}
                                             <img 
                                                 className="card-img-top p-3" 
                                                 src={`${BACKEND_URL}/${product.image}`} 
@@ -169,8 +176,41 @@ const HomePage = () => {
                                 </div>
                             );
                         })}
-
                     </div> 
+
+                    {/* KHU VỰC NÚT BẤM PHÂN TRANG (PAGINATION UI) */}
+                    {totalPages > 0 && (
+                        <div className="d-flex justify-content-center mt-4">
+                            <nav aria-label="Page navigation">
+                                <ul className="pagination pagination-lg shadow-sm rounded-pill overflow-hidden">
+                                    <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                                        <button className="page-link text-success fw-bold" onClick={() => handlePageChange(currentPage - 1)}>
+                                            &laquo; Trước
+                                        </button>
+                                    </li>
+                                    
+                                    {/* Vẽ số trang tự động dựa vào totalPages */}
+                                    {[...Array(totalPages)].map((_, index) => (
+                                        <li key={index} className={`page-item ${currentPage === index + 1 ? 'active' : ''}`}>
+                                            <button 
+                                                className={`page-link fw-bold ${currentPage === index + 1 ? 'bg-success border-success text-white' : 'text-success'}`}
+                                                onClick={() => handlePageChange(index + 1)}
+                                            >
+                                                {index + 1}
+                                            </button>
+                                        </li>
+                                    ))}
+
+                                    <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                                        <button className="page-link text-success fw-bold" onClick={() => handlePageChange(currentPage + 1)}>
+                                            Sau &raquo;
+                                        </button>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    )}
+                    
                 </div>
             </section>
         </>

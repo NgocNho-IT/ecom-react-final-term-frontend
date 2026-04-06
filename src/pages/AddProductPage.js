@@ -13,7 +13,6 @@ const AddProductPage = () => {
     const [image, setImage] = useState(null);
 
     useEffect(() => {
-        // Lấy danh sách danh mục để điền vào thẻ <select>
         const fetchCats = async () => {
             const { data } = await API.get('/products/categories');
             if (data.success) setCategories(data.categories);
@@ -38,7 +37,6 @@ const AddProductPage = () => {
         if (image) data.append('image', image);
 
         try {
-            // API POST /admin/products (hỗ trợ multer upload ảnh)
             await API.post('/admin/products', data, { headers: { 'Content-Type': 'multipart/form-data' }});
             alert("Đã thêm sản phẩm thành công!");
             navigate('/admin');

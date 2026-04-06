@@ -11,20 +11,15 @@ const Header = () => {
     const [categories, setCategories] = useState([]);
     const [cartCount, setCartCount] = useState(0);
     
-    // Autocomplete State
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const searchRef = useRef(null);
 
-    // HÀM LẤY DỮ LIỆU (Được tách riêng để gọi lại khi có sự kiện thay đổi giỏ hàng)
     const fetchNavData = async () => {
         try {
-            // 1. Lấy danh mục
             const catRes = await API.get('/products/categories');
             if (catRes.data.success) setCategories(catRes.data.categories);
-
-            // 2. Lấy số lượng sản phẩm trong giỏ nếu đã đăng nhập
             if (user) {
                 const cartRes = await API.get('/cart');
                 if (cartRes.data.success && cartRes.data.cart) {
@@ -39,11 +34,7 @@ const Header = () => {
     };
 
     useEffect(() => {
-        // Chạy lần đầu khi load trang
         fetchNavData();
-
-        // THIẾT LẬP BỘ LẮNG NGHE SỰ KIỆN "cartUpdated"
-        // Khi Nhớ bấm thêm hàng ở trang khác, sự kiện này sẽ kích hoạt hàm fetchNavData
         const handleCartUpdate = () => {
             console.log("Header đã nhận tín hiệu: Đang cập nhật giỏ hàng...");
             fetchNavData();
@@ -51,11 +42,9 @@ const Header = () => {
 
         window.addEventListener('cartUpdated', handleCartUpdate);
         
-        // Xóa bộ lắng nghe khi component bị hủy để tránh rác bộ nhớ
         return () => window.removeEventListener('cartUpdated', handleCartUpdate);
     }, [user]);
 
-    // Xử lý Tìm kiếm Autocomplete
     useEffect(() => {
         const delayDebounceFn = setTimeout(async () => {
             if (searchQuery.trim().length > 0) {
@@ -77,7 +66,6 @@ const Header = () => {
         return () => clearTimeout(delayDebounceFn);
     }, [searchQuery]);
 
-    // Ẩn Autocomplete khi click ra ngoài
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -171,7 +159,6 @@ const Header = () => {
                                 </div>
                             </form>
 
-                            {/* Giao diện Autocomplete */}
                             {showDropdown && searchResults.length > 0 && (
                                 <div className="autocomplete-dropdown">
                                     <ul className="list-unstyled mb-0">
@@ -233,7 +220,6 @@ const Header = () => {
                             <li className="nav-item ms-lg-3 mt-2 mt-lg-0">
                                 <Link to="/cart" className="btn btn-outline-success border-2 rounded-pill px-3 fw-bold position-relative">
                                     <i className="bi bi-cart-fill"></i>
-                                    {/* ICON GIỎ HÀNG MÀU ĐỎ CẬP NHẬT TỨC THÌ */}
                                     <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm">
                                         {cartCount}
                                     </span>

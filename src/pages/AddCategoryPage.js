@@ -9,7 +9,7 @@ const AddCategoryPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            // Đảm bảo có API POST /admin/categories ở Backend
+            
             await API.post('/admin/categories', { name });
             alert("Đã thêm danh mục mới!");
             navigate('/admin');
