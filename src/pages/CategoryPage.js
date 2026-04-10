@@ -17,6 +17,7 @@ const CategoryPage = () => {
         setCurrentPage(1);
     }, [id]);
 
+    // Lấy dữ liệu sản phẩm theo danh mục từ Backend
     useEffect(() => {
         const fetchCategoryData = async () => {
             setLoading(true);
@@ -100,8 +101,24 @@ const CategoryPage = () => {
                                                 </Link>
                                             </h6>
                                             
-                                            <div className="d-flex justify-content-center small text-warning mb-2">
-                                                <i className="bi bi-star-fill"></i><i className="bi bi-star-fill"></i><i className="bi bi-star-fill"></i><i className="bi bi-star-fill"></i><i className="bi bi-star-fill"></i>
+                                            {/* HIỂN THỊ ĐÁNH GIÁ THỰC TẾ */}
+                                            <div className="d-flex justify-content-center align-items-center mb-2" style={{ minHeight: '20px' }}>
+                                                {product.numReviews > 0 ? (
+                                                    <>
+                                                        <div className="text-warning small me-2">
+                                                            {[...Array(5)].map((_, i) => (
+                                                                <i key={i} className={`bi ${i < Math.round(product.rating) ? 'bi-star-fill' : 'bi-star'}`}></i>
+                                                            ))}
+                                                        </div>
+                                                        <span className="text-muted small" style={{ fontSize: '0.7rem' }}>
+                                                            ({product.numReviews})
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <span className="text-muted small italic" style={{ fontSize: '0.75rem' }}>
+                                                        Chưa có đánh giá
+                                                    </span>
+                                                )}
                                             </div>
 
                                             <div className="price-box">

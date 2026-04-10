@@ -13,6 +13,7 @@ const HomePage = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
 
+    // Lấy dữ liệu sản phẩm từ Backend
     useEffect(() => {
         const fetchHomeData = async () => {
             try {
@@ -104,7 +105,7 @@ const HomePage = () => {
                 )}
             </div>
 
-            {/* DANH SÁCH SẢN PHẨM CÓ PHÂN TRANG */}
+            {/* DANH SÁCH SẢN PHẨM */}
             <section className="py-5 bg-light">
                 <div className="container px-4 px-lg-5 mt-5">
                     <div className="d-flex justify-content-between align-items-end mb-4 border-start border-success border-5 ps-3">
@@ -145,8 +146,24 @@ const HomePage = () => {
                                                     </Link>
                                                 </h6>
                                                 
-                                                <div className="d-flex justify-content-center small text-warning mb-2">
-                                                    <i className="bi bi-star-fill"></i><i className="bi bi-star-fill"></i><i className="bi bi-star-fill"></i><i className="bi bi-star-fill"></i><i className="bi bi-star-fill"></i>
+                                                {/* HIỂN THỊ ĐÁNH GIÁ THỰC TẾ */}
+                                                <div className="d-flex justify-content-center align-items-center mb-2" style={{ minHeight: '20px' }}>
+                                                    {product.numReviews > 0 ? (
+                                                        <>
+                                                            <div className="text-warning small me-2">
+                                                                {[...Array(5)].map((_, i) => (
+                                                                    <i key={i} className={`bi ${i < Math.round(product.rating) ? 'bi-star-fill' : 'bi-star'}`}></i>
+                                                                ))}
+                                                            </div>
+                                                            <span className="text-muted small" style={{ fontSize: '0.7rem' }}>
+                                                                ({product.numReviews})
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-muted small italic" style={{ fontSize: '0.75rem' }}>
+                                                            Chưa có đánh giá
+                                                        </span>
+                                                    )}
                                                 </div>
 
                                                 <div className="mb-2">

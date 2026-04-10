@@ -10,6 +10,9 @@ const EditProductPage = () => {
     const [loading, setLoading] = useState(true);
     const [imageFile, setImageFile] = useState(null); 
     const [currentImage, setCurrentImage] = useState(''); 
+    
+    // MỚI: State quản lý danh sách đánh giá của sản phẩm này
+    const [reviews, setReviews] = useState([]);
 
     const [formData, setFormData] = useState({
         name: '', category: '', description: '', price: '', stock: '', 
@@ -18,38 +21,42 @@ const EditProductPage = () => {
         variants: [] 
     });
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const catRes = await API.get('/products/categories');
-                if (catRes.data.success) setCategories(catRes.data.categories);
+    const fetchData = async () => {
+        try {
+            const catRes = await API.get('/products/categories');
+            if (catRes.data.success) setCategories(catRes.data.categories);
 
-                const prodRes = await API.get(`/products/${id}`);
-                if (prodRes.data.success) {
-                    const p = prodRes.data.product;
-                    setCurrentImage(p.image);
-                    setFormData({
-                        name: p.name,
-                        category: p.category?._id || p.category, 
-                        description: p.description,
-                        price: p.price || '',
-                        stock: p.stock || '',
-                        screen: p.specs?.screen || '',
-                        os: p.specs?.os || '',
-                        cameraBack: p.specs?.cameraBack || '',
-                        cameraFront: p.specs?.cameraFront || '',
-                        cpu: p.specs?.cpu || '',
-                        battery: p.specs?.battery || '',
-                        youtubeId: p.youtubeId || '',
-                        variants: p.variants || [] 
-                    });
-                }
-                setLoading(false);
-            } catch (err) {
-                console.error("Lỗi fetch:", err);
-                setLoading(false);
+            const prodRes = await API.get(`/products/${id}`);
+            if (prodRes.data.success) {
+                const p = prodRes.data.product;
+                setCurrentImage(p.image);
+                // MỚI: Lấy danh sách đánh giá từ API chi tiết sản phẩm
+                setReviews(prodRes.data.reviews || []);
+                
+                setFormData({
+                    name: p.name,
+                    category: p.category?._id || p.category, 
+                    description: p.description,
+                    price: p.price || '',
+                    stock: p.stock || '',
+                    screen: p.specs?.screen || '',
+                    os: p.specs?.os || '',
+                    cameraBack: p.specs?.cameraBack || '',
+                    cameraFront: p.specs?.cameraFront || '',
+                    cpu: p.specs?.cpu || '',
+                    battery: p.specs?.battery || '',
+                    youtubeId: p.youtubeId || '',
+                    variants: p.variants || [] 
+                });
             }
-        };
+            setLoading(false);
+        } catch (err) {
+            console.error("Lỗi fetch:", err);
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchData();
     }, [id]);
 
@@ -72,12 +79,9 @@ const EditProductPage = () => {
     const handleVariantChange = (index, field, value) => {
         const updatedVariants = [...formData.variants];
         updatedVariants[index][field] = value;
-        
-        // TÍNH NĂNG MỚI: Tự động reset giá sale về 0 nếu tắt nút Đang Sale
         if (field === 'isSale' && value === false) {
             updatedVariants[index]['salePrice'] = 0;
         }
-
         setFormData({ ...formData, variants: updatedVariants });
     };
 
@@ -94,6 +98,22 @@ const EditProductPage = () => {
     const handleRemoveVariant = (index) => {
         const updatedVariants = formData.variants.filter((_, i) => i !== index);
         setFormData({ ...formData, variants: updatedVariants });
+    };
+
+    // MỚI: Logic xóa đánh giá ngay tại trang sửa sản phẩm
+    const handleDeleteReview = async (reviewId) => {
+        if (window.confirm("Nhớ có chắc muốn xóa vĩnh viễn đánh giá này không?")) {
+            try {
+                const { data } = await API.delete(`/admin/review/${reviewId}`);
+                if (data.success) {
+                    // Cập nhật lại danh sách reviews tại chỗ
+                    setReviews(reviews.filter(r => r._id !== reviewId));
+                    alert("Đã xóa đánh giá thành công!");
+                }
+            } catch (error) {
+                alert("Lỗi khi xóa đánh giá!");
+            }
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -124,7 +144,6 @@ const EditProductPage = () => {
                 navigate('/admin');
             }
         } catch (error) {
-            console.error("Lỗi submit:", error.response?.data);
             alert(error.response?.data?.message || "Lỗi khi lưu sản phẩm!");
         }
     };
@@ -139,6 +158,7 @@ const EditProductPage = () => {
                         <h3 className="fw-bold text-success mb-4 text-center text-uppercase">
                             <i className="bi bi-pencil-square me-2"></i> Chỉnh sửa toàn diện Sản Phẩm
                         </h3>
+                        
                         <form onSubmit={handleSubmit}>
                             {/* BLOCK 1: THÔNG TIN CƠ BẢN */}
                             <div className="card bg-light border-0 p-3 mb-4 rounded-3">
@@ -188,7 +208,6 @@ const EditProductPage = () => {
                                     <div className="col-md-12 mt-3">
                                         <label className="form-label fw-bold text-danger"><i className="bi bi-youtube me-1"></i> ID hoặc Link Youtube</label>
                                         <input type="text" name="youtubeId" className="form-control border-danger" placeholder="Nhập ID hoặc dán cả link Youtube vào đây..." value={formData.youtubeId} onChange={handleChange} />
-                                        <small className="text-muted">Tính năng tự động: Nếu bạn dán link Youtube dài, hệ thống sẽ tự động cắt lấy ID cho bạn!</small>
                                     </div>
                                 </div>
                             </div>
@@ -202,72 +221,60 @@ const EditProductPage = () => {
                                     </button>
                                 </div>
                                 
-                                {formData.variants.length === 0 ? (
-                                    <div className="text-center text-muted p-3 border border-dashed rounded bg-light">Chưa có phiên bản nào. Hãy bấm thêm mới!</div>
-                                ) : (
-                                    formData.variants.map((variant, index) => (
-                                        <div key={index} className="card border-0 shadow-sm mb-3 position-relative bg-white">
-                                            <span 
-                                                className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
-                                                style={{ cursor: 'pointer', zIndex: 10 }}
-                                                onClick={() => handleRemoveVariant(index)}
-                                                title="Xóa phiên bản này"
-                                            >
-                                                <i className="bi bi-x-lg"></i>
-                                            </span>
-                                            <div className="card-body p-3">
-                                                <h6 className="fw-bold mb-3 text-primary border-bottom pb-2">Phiên bản #{index + 1}</h6>
-                                                <div className="row g-2">
-                                                    <div className="col-md-3">
-                                                        <label className="small fw-bold">Tên Màu</label>
-                                                        <input type="text" className="form-control form-control-sm" placeholder="VD: Đen Titan" value={variant.colorName} onChange={(e) => handleVariantChange(index, 'colorName', e.target.value)} required />
-                                                    </div>
-                                                    <div className="col-md-2">
-                                                        <label className="small fw-bold">Mã Màu</label>
-                                                        <input type="color" className="form-control form-control-sm form-control-color w-100" value={variant.colorHex} onChange={(e) => handleVariantChange(index, 'colorHex', e.target.value)} />
-                                                    </div>
-                                                    <div className="col-md-4">
-                                                        <label className="small fw-bold">Dung lượng</label>
-                                                        <input type="text" className="form-control form-control-sm" placeholder="VD: 256GB" value={variant.storageCapacity} onChange={(e) => handleVariantChange(index, 'storageCapacity', e.target.value)} required />
-                                                    </div>
-                                                    <div className="col-md-3">
-                                                        <label className="small fw-bold">Mạng</label>
-                                                        <select className="form-select form-select-sm" value={variant.network} onChange={(e) => handleVariantChange(index, 'network', e.target.value)}>
-                                                            <option value="4G">4G</option>
-                                                            <option value="5G">5G</option>
-                                                        </select>
-                                                    </div>
-                                                    
-                                                    {/* HÀNG DƯỚI: Đã sắp xếp lại logic ẩn hiện */}
-                                                    <div className="col-md-3 mt-2">
-                                                        <label className="small fw-bold text-success">Giá gốc</label>
-                                                        <input type="number" className="form-control form-control-sm" value={variant.price} onChange={(e) => handleVariantChange(index, 'price', e.target.value)} required />
-                                                    </div>
-
-                                                    <div className="col-md-3 mt-2">
-                                                        <label className="small fw-bold">Tồn kho</label>
-                                                        <input type="number" className="form-control form-control-sm" value={variant.stock} onChange={(e) => handleVariantChange(index, 'stock', e.target.value)} required />
-                                                    </div>
-
-                                                    <div className="col-md-3 mt-2 d-flex align-items-end pb-1">
-                                                        <div className="form-check form-switch">
-                                                            <input className="form-check-input" type="checkbox" checked={variant.isSale} onChange={(e) => handleVariantChange(index, 'isSale', e.target.checked)} />
-                                                            <label className="form-check-label small fw-bold text-danger">Đang Sale</label>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* CHỈ HIỆN Ô NÀY KHI variant.isSale === true */}
-                                                    {variant.isSale && (
-                                                        <div className="col-md-3 mt-2 slide-in-fwd">
-                                                            <label className="small fw-bold text-danger">Giá Sale</label>
-                                                            <input type="number" className="form-control form-control-sm border-danger" value={variant.salePrice} onChange={(e) => handleVariantChange(index, 'salePrice', e.target.value)} required={variant.isSale} />
-                                                        </div>
-                                                    )}
-                                                </div>
+                                {formData.variants.map((variant, index) => (
+                                    <div key={index} className="card border-0 shadow-sm mb-3 position-relative bg-white border">
+                                        <button type="button" className="btn btn-sm btn-danger position-absolute" style={{ top: '-10px', right: '-10px', borderRadius: '50%' }} onClick={() => handleRemoveVariant(index)}><i className="bi bi-x"></i></button>
+                                        <div className="card-body p-3">
+                                            <div className="row g-2">
+                                                <div className="col-md-3"><label className="small fw-bold">Tên Màu</label><input type="text" className="form-control form-control-sm" value={variant.colorName} onChange={(e) => handleVariantChange(index, 'colorName', e.target.value)} required /></div>
+                                                <div className="col-md-2"><label className="small fw-bold">Mã Màu</label><input type="color" className="form-control form-control-sm form-control-color w-100" value={variant.colorHex} onChange={(e) => handleVariantChange(index, 'colorHex', e.target.value)} /></div>
+                                                <div className="col-md-4"><label className="small fw-bold">Dung lượng</label><input type="text" className="form-control form-control-sm" value={variant.storageCapacity} onChange={(e) => handleVariantChange(index, 'storageCapacity', e.target.value)} required /></div>
+                                                <div className="col-md-3"><label className="small fw-bold">Mạng</label><select className="form-select form-select-sm" value={variant.network} onChange={(e) => handleVariantChange(index, 'network', e.target.value)}><option value="4G">4G</option><option value="5G">5G</option></select></div>
+                                                <div className="col-md-3 mt-2"><label className="small fw-bold text-success">Giá gốc</label><input type="number" className="form-control form-control-sm" value={variant.price} onChange={(e) => handleVariantChange(index, 'price', e.target.value)} required /></div>
+                                                <div className="col-md-3 mt-2"><label className="small fw-bold">Tồn kho</label><input type="number" className="form-control form-control-sm" value={variant.stock} onChange={(e) => handleVariantChange(index, 'stock', e.target.value)} required /></div>
+                                                <div className="col-md-2 mt-2 d-flex align-items-end pb-1"><div className="form-check form-switch"><input className="form-check-input" type="checkbox" checked={variant.isSale} onChange={(e) => handleVariantChange(index, 'isSale', e.target.checked)} /><label className="form-check-label small fw-bold text-danger">Sale</label></div></div>
+                                                {variant.isSale && <div className="col-md-4 mt-2"><label className="small fw-bold text-danger">Giá Sale</label><input type="number" className="form-control form-control-sm border-danger" value={variant.salePrice} onChange={(e) => handleVariantChange(index, 'salePrice', e.target.value)} required /></div>}
                                             </div>
                                         </div>
-                                    ))
-                                )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* MỚI - BLOCK 4: QUẢN LÝ ĐÁNH GIÁ (REVIEWS) */}
+                            <div className="card border-primary p-3 mb-4 rounded-3 shadow-sm bg-white">
+                                <h5 className="fw-bold text-primary mb-3">
+                                    <i className="bi bi-chat-left-dots me-2"></i> 4. Quản lý Đánh giá khách hàng ({reviews.length})
+                                </h5>
+                                <div className="table-responsive" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                    <table className="table table-hover align-middle">
+                                        <thead className="table-light sticky-top">
+                                            <tr>
+                                                <th style={{ width: '150px' }}>Khách hàng</th>
+                                                <th style={{ width: '100px' }}>Số sao</th>
+                                                <th>Nội dung</th>
+                                                <th className="text-center">Xóa</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {reviews.length > 0 ? reviews.map((rv) => (
+                                                <tr key={rv._id}>
+                                                    <td><small className="fw-bold">{rv.name}</small><br /><small className="text-muted" style={{fontSize: '10px'}}>{new Date(rv.createdAt).toLocaleDateString('vi-VN')}</small></td>
+                                                    <td><span className="text-warning fw-bold">{rv.rating} <i className="bi bi-star-fill small"></i></span></td>
+                                                    <td><p className="mb-0 small text-dark" style={{ lineHeight: '1.4' }}>{rv.content}</p></td>
+                                                    <td className="text-center">
+                                                        <button type="button" className="btn btn-sm btn-outline-danger rounded-circle" onClick={() => handleDeleteReview(rv._id)}>
+                                                            <i className="bi bi-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            )) : (
+                                                <tr>
+                                                    <td colSpan="4" className="text-center py-4 text-muted">Chưa có đánh giá nào cho sản phẩm này.</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
 
                             <div className="d-grid gap-2 mt-5">

@@ -25,6 +25,8 @@ const CategorySummaryPage = () => {
         if (name === 'iphone') return <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" className="logo-img" alt="Apple" />;
         if (name === 'samsung') return <img src="https://upload.wikimedia.org/wikipedia/commons/f/f7/Samsung_Galaxy_logo.svg" className="logo-img" alt="Samsung" />;
         if (name === 'xiaomi') return <img src="https://upload.wikimedia.org/wikipedia/commons/a/ae/Xiaomi_logo_%282021-%29.svg" className="logo-img" alt="Xiaomi" />;
+
+        
         return <i className="bi bi-phone text-success" style={{ fontSize: '3.5rem' }}></i>;
     };
 

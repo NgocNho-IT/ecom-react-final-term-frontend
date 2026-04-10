@@ -24,11 +24,11 @@ const SearchPage = () => {
         const fetchSearchResults = async () => {
             setLoading(true);
             try {
-                const { data } = await API.get(`/products/search?q=${queryParam}&page=${currentPage}`);
+                // API đã được tối ưu độ chính xác ở Backend
+                const { data } = await API.get(`/products/search?q=${queryParam.trim()}&page=${currentPage}`);
                 if (data.success) {
                     setProducts(data.products);
                     setTotalPages(data.totalPages);
-                    // LẤY SỐ LƯỢNG THỰC TẾ TỪ SERVER, KHÔNG ĐOÁN ẢO NỮA
                     setTotalCount(data.totalItems); 
                 }
             } catch (error) {
@@ -38,11 +38,12 @@ const SearchPage = () => {
             }
         };
 
-        if (queryParam) {
+        if (queryParam.trim()) {
             fetchSearchResults();
         } else {
             setProducts([]);
             setLoading(false);
+            setTotalCount(0);
         }
     }, [queryParam, currentPage]); 
 
@@ -60,6 +61,7 @@ const SearchPage = () => {
                     .product-card { transition: transform 0.3s ease, box-shadow 0.3s ease; border-radius: 15px; overflow: hidden; }
                     .product-card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(25, 135, 84, 0.2) !important; border-color: #198754 !important; }
                     .card-img-top { height: 200px; object-fit: contain; padding: 15px; }
+                    .italic { font-style: italic; }
                 `}
             </style>
 
@@ -67,9 +69,9 @@ const SearchPage = () => {
                 <div className="container px-4 px-lg-5 my-4">
                     <div className="text-center text-white">
                         <h2 className="fw-bolder">KẾT QUẢ TÌM KIẾM</h2>
-                        {queryParam ? (
+                        {queryParam.trim() ? (
                             <p className="lead fw-normal text-white-50 mb-0">
-                                Tìm thấy <strong>{totalCount}</strong> sản phẩm cho từ khóa: "<strong>{queryParam}</strong>"
+                                Tìm thấy <strong>{totalCount}</strong> sản phẩm khớp với: "<strong>{queryParam}</strong>"
                             </p>
                         ) : (
                             <p className="lead fw-normal text-white-50 mb-0">Bạn chưa nhập từ khóa tìm kiếm.</p>
@@ -83,7 +85,7 @@ const SearchPage = () => {
                     {loading && products.length === 0 ? (
                         <div className="text-center py-5">
                             <div className="spinner-border text-success mb-3" role="status"></div>
-                            <h4 className="text-success">Đang tìm kiếm sản phẩm...</h4>
+                            <h4 className="text-success">Đang lọc kết quả chính xác...</h4>
                         </div>
                     ) : products.length > 0 ? (
                         <>
@@ -117,8 +119,24 @@ const SearchPage = () => {
                                                             </Link>
                                                         </h6>
                                                         
-                                                        <div className="d-flex justify-content-center small text-warning mb-2">
-                                                            <i className="bi bi-star-fill"></i><i className="bi bi-star-fill"></i><i className="bi bi-star-fill"></i><i className="bi bi-star-fill"></i><i className="bi bi-star-fill"></i>
+                                                        {/* LOGIC HIỂN THỊ ĐÁNH GIÁ THỰC TẾ */}
+                                                        <div className="d-flex justify-content-center align-items-center mb-2" style={{ minHeight: '20px' }}>
+                                                            {product.numReviews > 0 ? (
+                                                                <>
+                                                                    <div className="text-warning small me-2">
+                                                                        {[...Array(5)].map((_, i) => (
+                                                                            <i key={i} className={`bi ${i < Math.round(product.rating) ? 'bi-star-fill' : 'bi-star'}`}></i>
+                                                                        ))}
+                                                                    </div>
+                                                                    <span className="text-muted small" style={{ fontSize: '0.7rem' }}>
+                                                                        ({product.numReviews})
+                                                                    </span>
+                                                                </>
+                                                            ) : (
+                                                                <span className="text-muted small italic" style={{ fontSize: '0.75rem' }}>
+                                                                    Chưa có đánh giá
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         
                                                         <div className="mb-2">
@@ -151,7 +169,7 @@ const SearchPage = () => {
                                 })}
                             </div>
 
-                            {/* NÚT BẤM PHÂN TRANG */}
+                            {/* PHÂN TRANG */}
                             {totalPages > 1 && (
                                 <div className="d-flex justify-content-center mt-4">
                                     <nav>
@@ -184,8 +202,8 @@ const SearchPage = () => {
                     ) : (
                         <div className="text-center py-5">
                             <i className="bi bi-search-heart text-muted mb-3" style={{ fontSize: '5rem', opacity: 0.3 }}></i>
-                            <h4 className="fw-bold text-secondary">Rất tiếc, không tìm thấy kết quả nào!</h4>
-                            <p className="text-muted">Nhớ thử lại bằng các từ khóa khác như "Samsung", "iPhone 15" hoặc "Redmi" nhé.</p>
+                            <h4 className="fw-bold text-secondary">Rất tiếc, không tìm thấy kết quả nào cho "{queryParam}"!</h4>
+                            <p className="text-muted">Nhớ thử lại bằng các từ khóa chính xác hơn như "Samsung", "iPhone 15" hoặc "Redmi" nhé.</p>
                             <Link to="/" className="btn btn-success rounded-pill px-4 mt-3 shadow-sm">
                                 <i className="bi bi-house-door me-2"></i>Quay lại trang chủ
                             </Link>
