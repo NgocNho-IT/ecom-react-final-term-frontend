@@ -22,11 +22,12 @@ const CategorySummaryPage = () => {
 
     const getCategoryLogo = (catName) => {
         const name = catName.toLowerCase();
-        if (name === 'iphone') return <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" className="logo-img" alt="Apple" />;
-        if (name === 'samsung') return <img src="https://upload.wikimedia.org/wikipedia/commons/f/f7/Samsung_Galaxy_logo.svg" className="logo-img" alt="Samsung" />;
-        if (name === 'xiaomi') return <img src="https://upload.wikimedia.org/wikipedia/commons/a/ae/Xiaomi_logo_%282021-%29.svg" className="logo-img" alt="Xiaomi" />;
+        if (name.includes('iphone') || name.includes('apple')) return <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" className="logo-img" alt="Apple" />;
+        if (name.includes('samsung')) return <img src="https://upload.wikimedia.org/wikipedia/commons/f/f7/Samsung_Galaxy_logo.svg" className="logo-img" alt="Samsung" />;
+        if (name.includes('xiaomi')) return <img src="https://upload.wikimedia.org/wikipedia/commons/a/ae/Xiaomi_logo_%282021-%29.svg" className="logo-img" alt="Xiaomi" />;
+        if (name.includes('vivo')) return <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Vivo_logo_2019.svg/3840px-Vivo_logo_2019.svg.png" className="logo-img" alt="Vivo" />;
+        if (name.includes('oppo')) return <img src="https://cdn.hoanghamobile.vn//Uploads/2026/03/26/logo-oppo-15.png" className="logo-img" alt="Oppo" />;
 
-        
         return <i className="bi bi-phone text-success" style={{ fontSize: '3.5rem' }}></i>;
     };
 
@@ -51,7 +52,7 @@ const CategorySummaryPage = () => {
             </header>
 
             <div className="container mt-5 mb-5" style={{ minHeight: '450px' }}>
-                <div className="row row-cols-1 row-cols-md-3 g-4 justify-content-center">
+                <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-5 g-4 justify-content-center">
                     {categories.map((category) => (
                         <div className="col" key={category._id}>
                             <Link to={`/category/${category._id}`} className="text-decoration-none">

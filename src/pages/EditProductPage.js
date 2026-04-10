@@ -240,42 +240,8 @@ const EditProductPage = () => {
                                 ))}
                             </div>
 
-                            {/* MỚI - BLOCK 4: QUẢN LÝ ĐÁNH GIÁ (REVIEWS) */}
-                            <div className="card border-primary p-3 mb-4 rounded-3 shadow-sm bg-white">
-                                <h5 className="fw-bold text-primary mb-3">
-                                    <i className="bi bi-chat-left-dots me-2"></i> 4. Quản lý Đánh giá khách hàng ({reviews.length})
-                                </h5>
-                                <div className="table-responsive" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                                    <table className="table table-hover align-middle">
-                                        <thead className="table-light sticky-top">
-                                            <tr>
-                                                <th style={{ width: '150px' }}>Khách hàng</th>
-                                                <th style={{ width: '100px' }}>Số sao</th>
-                                                <th>Nội dung</th>
-                                                <th className="text-center">Xóa</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {reviews.length > 0 ? reviews.map((rv) => (
-                                                <tr key={rv._id}>
-                                                    <td><small className="fw-bold">{rv.name}</small><br /><small className="text-muted" style={{fontSize: '10px'}}>{new Date(rv.createdAt).toLocaleDateString('vi-VN')}</small></td>
-                                                    <td><span className="text-warning fw-bold">{rv.rating} <i className="bi bi-star-fill small"></i></span></td>
-                                                    <td><p className="mb-0 small text-dark" style={{ lineHeight: '1.4' }}>{rv.content}</p></td>
-                                                    <td className="text-center">
-                                                        <button type="button" className="btn btn-sm btn-outline-danger rounded-circle" onClick={() => handleDeleteReview(rv._id)}>
-                                                            <i className="bi bi-trash"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            )) : (
-                                                <tr>
-                                                    <td colSpan="4" className="text-center py-4 text-muted">Chưa có đánh giá nào cho sản phẩm này.</td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                            
+                            
 
                             <div className="d-grid gap-2 mt-5">
                                 <button type="submit" className="btn btn-success btn-lg rounded-pill fw-bold shadow">LƯU TOÀN BỘ CẬP NHẬT</button>

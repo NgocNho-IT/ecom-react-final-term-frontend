@@ -21,8 +21,9 @@ import CategoryPage from './pages/CategoryPage';
 import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
 
-
 import AdminDashboardPage from './pages/AdminDashboardPage';
+// MỚI THÊM: Import trang Review
+import AdminReviewPage from './pages/AdminReviewPage'; 
 import AddCategoryPage from './pages/AddCategoryPage';
 import EditCategoryPage from './pages/EditCategoryPage'; 
 import AddProductPage from './pages/AddProductPage';
@@ -53,6 +54,9 @@ function App() {
                 <Route path="/about" element={<AboutPage />} />
 
                 <Route path="/admin" element={<AdminDashboardPage />} />
+                
+                {/* MỚI THÊM DÒNG NÀY ĐỂ REACT MỞ ĐƯỢC TRANG ĐÁNH GIÁ */}
+                <Route path="/admin/reviews" element={<AdminReviewPage />} />
                 
                 <Route path="/admin/category/add" element={<AddCategoryPage />} />
                 <Route path="/admin/category/edit/:id" element={<EditCategoryPage />} />

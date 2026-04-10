@@ -6,6 +6,7 @@ const EditOrderPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [order, setOrder] = useState(null);
+    const [errorMsg, setErrorMsg] = useState(''); // Thêm thông báo lỗi để khỏi bị treo trắng màn hình
     const [formData, setFormData] = useState({
         fullName: '', email: '', address: '', city: '', state: '', zipcode: '', status: ''
     });
@@ -13,21 +14,23 @@ const EditOrderPage = () => {
     useEffect(() => {
         const fetchOrder = async () => {
             try {
-                const { data } = await API.get(`/orders/${id}`);
+                // Sửa thành route chuẩn của Admin
+                const { data } = await API.get(`/admin/order/${id}`);
                 if (data.success) {
                     setOrder(data.order);
                     setFormData({
-                        fullName: data.order.shippingInfo.fullName,
-                        email: data.order.shippingInfo.email,
-                        address: data.order.shippingInfo.address,
-                        city: data.order.shippingInfo.city,
-                        state: data.order.shippingInfo.state,
-                        zipcode: data.order.shippingInfo.zipcode,
-                        status: data.order.status
+                        fullName: data.order.shippingInfo?.fullName || '',
+                        email: data.order.shippingInfo?.email || '',
+                        address: data.order.shippingInfo?.address || '',
+                        city: data.order.shippingInfo?.city || '',
+                        state: data.order.shippingInfo?.state || '',
+                        zipcode: data.order.shippingInfo?.zipcode || '',
+                        status: data.order.isShipped ? 'Delivered' : 'Processing' // Map đúng status từ DB
                     });
                 }
             } catch (error) {
                 console.error("Lỗi lấy đơn hàng", error);
+                setErrorMsg("Lỗi kết nối: Không thể tải thông tin đơn hàng!");
             }
         };
         fetchOrder();
@@ -44,16 +47,18 @@ const EditOrderPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await API.put(`/admin/orders/${id}`, formData);
+            // Gửi dữ liệu cập nhật theo đúng Route Admin
+            await API.put(`/admin/order/${id}`, formData);
             alert("Cập nhật đơn hàng thành công!");
             navigate('/admin');
         } catch (error) {
-            alert("Lỗi cập nhật: " + error.response?.data?.message);
+            alert("Lỗi cập nhật: " + (error.response?.data?.message || error.message));
         }
     };
 
-    const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price);
+    const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price || 0);
 
+    if (errorMsg) return <div className="text-center mt-5 text-danger"><h3>{errorMsg}</h3><Link to="/admin" className="btn btn-outline-dark mt-3">Quay lại Admin</Link></div>;
     if (!order) return <div className="text-center mt-5"><h3>Đang tải...</h3></div>;
 
     return (
