@@ -8,12 +8,11 @@ const CategoryPage = () => {
     const [products, setProducts] = useState([]);
     const [categoryName, setCategoryName] = useState('');
     const [loading, setLoading] = useState(true);
+    const [totalItems, setTotalItems] = useState(0);
 
-    // --- STATES CHO PHÂN TRANG ---
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
-    // Reset về trang 1 nếu người dùng bấm sang Danh mục khác
     useEffect(() => {
         setCurrentPage(1);
     }, [id]);
@@ -22,12 +21,12 @@ const CategoryPage = () => {
         const fetchCategoryData = async () => {
             setLoading(true);
             try {
-                // Thêm query ?page= vào API
                 const { data } = await API.get(`/products/category/${id}?page=${currentPage}`);
                 if (data.success) {
                     setProducts(data.products);
                     setCategoryName(data.categoryName);
-                    setTotalPages(data.totalPages); // Nhận tổng số trang từ Backend
+                    setTotalPages(data.totalPages); 
+                    setTotalItems(data.totalItems);
                 }
             } catch (error) {
                 console.error("Lỗi load danh mục:", error);
@@ -37,13 +36,13 @@ const CategoryPage = () => {
         };
 
         fetchCategoryData();
-    }, [id, currentPage]); // Gọi lại API khi id danh mục HOẶC currentPage thay đổi
+    }, [id, currentPage]); 
 
     const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price || 0);
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
-        window.scrollTo({ top: 300, behavior: 'smooth' }); // Cuộn nhẹ lên đầu danh sách
+        window.scrollTo({ top: 300, behavior: 'smooth' }); 
     };
 
     if (loading && products.length === 0) return <div className="text-center mt-5 mb-5 py-5"><h3 className="text-success">Đang tải dữ liệu...</h3></div>;
@@ -62,7 +61,7 @@ const CategoryPage = () => {
                 <div className="container px-4 px-lg-5 my-5">
                     <div className="text-center text-white">
                         <h1 className="display-4 fw-bolder text-uppercase">{categoryName || "SẢN PHẨM"}</h1> 
-                        <p className="lead fw-normal text-white-50 mb-0">Danh sách sản phẩm thuộc dòng {categoryName}</p>
+                        <p className="lead fw-normal text-white-50 mb-0">Hiển thị {totalItems} sản phẩm thuộc dòng {categoryName}</p>
                     </div>
                 </div>
             </header>
@@ -140,8 +139,8 @@ const CategoryPage = () => {
 
                     </div> 
 
-                    {/* KHU VỰC NÚT BẤM PHÂN TRANG */}
-                    {totalPages > 0 && (
+                    {/* NÚT BẤM PHÂN TRANG */}
+                    {totalPages > 1 && (
                         <div className="d-flex justify-content-center mt-4">
                             <nav aria-label="Page navigation">
                                 <ul className="pagination pagination-lg shadow-sm rounded-pill overflow-hidden">

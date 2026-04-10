@@ -9,20 +9,19 @@ const HomePage = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // --- STATES CHO PHÂN TRANG ---
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
 
-    // Gắn currentPage vào mảng dependencies để hàm chạy lại mỗi khi đổi trang
     useEffect(() => {
         const fetchHomeData = async () => {
             try {
-                // Truyền query ?page= xuống Backend
                 const { data } = await API.get(`/products/home?page=${currentPage}`);
                 if (data.success) {
                     setSaleProducts(data.saleProducts);
                     setProducts(data.products);
-                    setTotalPages(data.totalPages); // Cập nhật tổng số trang
+                    setTotalPages(data.totalPages); 
+                    setTotalItems(data.totalItems);
                 }
                 setLoading(false);
             } catch (error) {
@@ -36,10 +35,9 @@ const HomePage = () => {
 
     const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price || 0);
 
-    // Hàm đổi trang và tự động cuộn màn hình lên đầu khu vực sản phẩm
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
-        window.scrollTo({ top: 600, behavior: 'smooth' }); // Cuộn nhẹ lên danh sách SP
+        window.scrollTo({ top: 600, behavior: 'smooth' }); 
     };
 
     if (loading) return <div className="text-center mt-5 mb-5"><h3 className="text-success">Đang tải cửa hàng...</h3></div>;
@@ -109,7 +107,10 @@ const HomePage = () => {
             {/* DANH SÁCH SẢN PHẨM CÓ PHÂN TRANG */}
             <section className="py-5 bg-light">
                 <div className="container px-4 px-lg-5 mt-5">
-                    <h3 className="fw-bold text-dark mb-4 border-start border-success border-5 ps-3">DANH SÁCH SẢN PHẨM</h3>
+                    <div className="d-flex justify-content-between align-items-end mb-4 border-start border-success border-5 ps-3">
+                        <h3 className="fw-bold text-dark mb-0">DANH SÁCH SẢN PHẨM</h3>
+                        <span className="text-muted small fw-bold">Tổng cộng: {totalItems} sản phẩm</span>
+                    </div>
                     
                     <div className="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
                         {products.map(product => {
@@ -128,7 +129,7 @@ const HomePage = () => {
 
                                         <Link to={`/product/${product._id}`}>
                                             <img 
-                                                className="card-img-top p-3" 
+                                                className="card-img-top p-3 bg-white" 
                                                 src={`${BACKEND_URL}/${product.image}`} 
                                                 alt={product.name} 
                                                 style={{ objectFit: 'contain', height: '200px', width: '100%' }} 
@@ -178,8 +179,8 @@ const HomePage = () => {
                         })}
                     </div> 
 
-                    {/* KHU VỰC NÚT BẤM PHÂN TRANG (PAGINATION UI) */}
-                    {totalPages > 0 && (
+                    {/* NÚT BẤM PHÂN TRANG */}
+                    {totalPages > 1 && (
                         <div className="d-flex justify-content-center mt-4">
                             <nav aria-label="Page navigation">
                                 <ul className="pagination pagination-lg shadow-sm rounded-pill overflow-hidden">
@@ -188,8 +189,6 @@ const HomePage = () => {
                                             &laquo; Trước
                                         </button>
                                     </li>
-                                    
-                                    {/* Vẽ số trang tự động dựa vào totalPages */}
                                     {[...Array(totalPages)].map((_, index) => (
                                         <li key={index} className={`page-item ${currentPage === index + 1 ? 'active' : ''}`}>
                                             <button 
@@ -200,7 +199,6 @@ const HomePage = () => {
                                             </button>
                                         </li>
                                     ))}
-
                                     <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
                                         <button className="page-link text-success fw-bold" onClick={() => handlePageChange(currentPage + 1)}>
                                             Sau &raquo;

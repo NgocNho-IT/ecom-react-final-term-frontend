@@ -11,13 +11,11 @@ const SearchPage = () => {
     const queryParam = useQuery().get('q') || '';
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [totalCount, setTotalCount] = useState(0); // Để đếm tổng số lượng thực tế
+    const [totalCount, setTotalCount] = useState(0); 
 
-    // --- STATES CHO PHÂN TRANG ---
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
-    // Reset về trang 1 nếu người dùng gõ từ khóa tìm kiếm MỚI
     useEffect(() => {
         setCurrentPage(1);
     }, [queryParam]);
@@ -26,16 +24,12 @@ const SearchPage = () => {
         const fetchSearchResults = async () => {
             setLoading(true);
             try {
-                // Nối thêm &page= vào chuỗi tìm kiếm
                 const { data } = await API.get(`/products/search?q=${queryParam}&page=${currentPage}`);
                 if (data.success) {
                     setProducts(data.products);
-                    setTotalPages(data.totalPages); // Lấy số trang từ backend
-                    
-                    // Nếu ở trang 1 thì set lại đếm tổng số để hiển thị trên Header
-                    if (currentPage === 1) {
-                        setTotalCount(data.count * data.totalPages); // Ước lượng hiển thị (Backend có thể cần trả về thêm totalItems)
-                    }
+                    setTotalPages(data.totalPages);
+                    // LẤY SỐ LƯỢNG THỰC TẾ TỪ SERVER, KHÔNG ĐOÁN ẢO NỮA
+                    setTotalCount(data.totalItems); 
                 }
             } catch (error) {
                 console.error("Lỗi khi tìm kiếm:", error);
@@ -50,13 +44,13 @@ const SearchPage = () => {
             setProducts([]);
             setLoading(false);
         }
-    }, [queryParam, currentPage]); // Gọi lại khi query hoặc trang thay đổi
+    }, [queryParam, currentPage]); 
 
     const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price || 0);
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
-        window.scrollTo({ top: 200, behavior: 'smooth' }); // Cuộn nhẹ lên đầu
+        window.scrollTo({ top: 200, behavior: 'smooth' }); 
     };
 
     return (
@@ -75,7 +69,7 @@ const SearchPage = () => {
                         <h2 className="fw-bolder">KẾT QUẢ TÌM KIẾM</h2>
                         {queryParam ? (
                             <p className="lead fw-normal text-white-50 mb-0">
-                                Kết quả tìm kiếm cho từ khóa: "<strong>{queryParam}</strong>"
+                                Tìm thấy <strong>{totalCount}</strong> sản phẩm cho từ khóa: "<strong>{queryParam}</strong>"
                             </p>
                         ) : (
                             <p className="lead fw-normal text-white-50 mb-0">Bạn chưa nhập từ khóa tìm kiếm.</p>
@@ -157,10 +151,10 @@ const SearchPage = () => {
                                 })}
                             </div>
 
-                            {/* KHU VỰC NÚT BẤM PHÂN TRANG */}
-                            {totalPages > 0 && (
+                            {/* NÚT BẤM PHÂN TRANG */}
+                            {totalPages > 1 && (
                                 <div className="d-flex justify-content-center mt-4">
-                                    <nav aria-label="Page navigation">
+                                    <nav>
                                         <ul className="pagination pagination-lg shadow-sm rounded-pill overflow-hidden">
                                             <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
                                                 <button className="page-link text-success fw-bold" onClick={() => handlePageChange(currentPage - 1)}>

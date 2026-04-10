@@ -1,28 +1,46 @@
 import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import API from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 
 const LoginPage = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
+    
+    const [serverError, setServerError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
-    const submitHandler = async (e) => {
-        e.preventDefault();
-        setError('');
-        try {
-            const { data } = await API.post('/users/login', { email, password });
-            if (data.success) {
-                login(data);
-                navigate('/');
+    const formik = useFormik({
+        initialValues: { email: '', password: '' },
+        validateOnChange: false,
+        validateOnBlur: false,
+        validationSchema: Yup.object({
+            email: Yup.string().email('Địa chỉ email không hợp lệ.').required('Vui lòng nhập email đăng nhập.'),
+            password: Yup.string().required('Vui lòng nhập mật khẩu.')
+        }),
+        onSubmit: async (values, { setSubmitting }) => {
+            setServerError('');
+            try {
+                const { data } = await API.post('/users/login', { email: values.email, password: values.password });
+                if (data.success) { 
+                    login(data); 
+                    navigate('/'); 
+                }
+            } catch (err) {
+                setServerError(err.response?.data?.message || 'Email hoặc mật khẩu không chính xác!');
+            } finally {
+                setSubmitting(false); 
             }
-        } catch (err) {
-            setError(err.response?.data?.message || 'Có lỗi xảy ra khi đăng nhập');
         }
+    });
+
+    // HÀM MỚI: Chỉ đổi màu cho cái Khung Wrapper bên ngoài, tránh lỗi của Bootstrap
+    const getWrapperClass = (fieldName) => {
+        if (formik.touched[fieldName] && formik.errors[fieldName]) return 'border-danger';
+        if (formik.touched[fieldName] && !formik.errors[fieldName]) return 'border-success';
+        return 'border-secondary-subtle'; // Màu viền mặc định
     };
 
     return (
@@ -38,44 +56,78 @@ const LoginPage = () => {
                             </div>
 
                             <div className="card-body p-4 p-md-5">
-                                {error && <div className="alert alert-danger small"><i className="bi bi-exclamation-circle"></i> {error}</div>}
+                                {serverError && (
+                                    <div className="alert alert-danger py-2 small fw-bold">
+                                        <i className="bi bi-exclamation-triangle-fill me-2"></i> {serverError}
+                                    </div>
+                                )}
                                 
-                                <form onSubmit={submitHandler}>
+                                <form onSubmit={formik.handleSubmit} noValidate>
+                                    
+                                    {/* Ô NHẬP EMAIL ĐƯỢC THIẾT KẾ LẠI BẰNG WRAPPER (CHỐNG LỖI UI) */}
                                     <div className="mb-4">
                                         <label className="form-label small fw-bold text-secondary">Email đăng nhập</label>
-                                        <div className="input-group">
-                                            <span className="input-group-text bg-light border-end-0 text-success"><i className="bi bi-envelope-fill"></i></span>
+                                        <div className={`d-flex align-items-center border bg-white ${getWrapperClass('email')}`} 
+                                             style={{ borderRadius: '12px', padding: '4px 8px', transition: 'all 0.3s' }}>
+                                            
                                             <input 
                                                 type="email" 
-                                                className="form-control border-start-0" 
-                                                style={{ borderRadius: '0 12px 12px 0', padding: '12px 18px', borderColor: '#dee2e6' }}
                                                 placeholder="Ví dụ: nho@gmail.com" 
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                required 
+                                                className="form-control form-control-lg border-0 shadow-none bg-transparent" 
+                                                style={{ fontSize: '1rem' }}
+                                                {...formik.getFieldProps('email')}
                                             />
+                                            
+                                            {/* Chèn Icon Trạng thái Thủ công (Đẹp và không đứt gãy) */}
+                                            {formik.touched.email && !formik.errors.email && <i className="bi bi-check-circle-fill text-success px-2 fs-5"></i>}
+                                            {formik.touched.email && formik.errors.email && <i className="bi bi-exclamation-circle-fill text-danger px-2 fs-5"></i>}
                                         </div>
+                                        {/* Hiển thị dòng chữ báo lỗi */}
+                                        {formik.touched.email && formik.errors.email && (
+                                            <div className="text-danger fw-bold small mt-1 ms-1">{formik.errors.email}</div>
+                                        )}
                                     </div>
 
+                                    {/* Ô NHẬP MẬT KHẨU (GỘP CẢ DẤU TICK VÀ MẮT THẦN VÀO MỘT KHỐI) */}
                                     <div className="mb-4">
                                         <label className="form-label small fw-bold text-secondary">Mật khẩu</label>
-                                        <div className="input-group">
-                                            <span className="input-group-text bg-light border-end-0 text-success"><i className="bi bi-lock-fill"></i></span>
+                                        <div className={`d-flex align-items-center border bg-white ${getWrapperClass('password')}`} 
+                                             style={{ borderRadius: '12px', padding: '4px 8px', transition: 'all 0.3s' }}>
+                                            
                                             <input 
-                                                type="password" 
-                                                className="form-control border-start-0" 
-                                                style={{ borderRadius: '0 12px 12px 0', padding: '12px 18px', borderColor: '#dee2e6' }}
+                                                type={showPassword ? "text" : "password"} 
                                                 placeholder="Nhập mật khẩu..." 
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                required 
+                                                className="form-control form-control-lg border-0 shadow-none bg-transparent" 
+                                                style={{ fontSize: '1rem' }}
+                                                {...formik.getFieldProps('password')}
                                             />
+
+                                            {/* Icon Trạng Thái */}
+                                            {formik.touched.password && !formik.errors.password && <i className="bi bi-check-circle-fill text-success px-1 fs-5"></i>}
+                                            {formik.touched.password && formik.errors.password && <i className="bi bi-exclamation-circle-fill text-danger px-1 fs-5"></i>}
+                                            
+                                            {/* Nút Mắt thần Ngăn cách */}
+                                            <div className="border-start ms-1 ps-2 my-1">
+                                                <i 
+                                                    className={`bi ${showPassword ? 'bi-eye-slash-fill' : 'bi-eye-fill'} ${formik.touched.password && formik.errors.password ? 'text-danger' : 'text-success'} px-2 fs-5`} 
+                                                    style={{ cursor: 'pointer' }}
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                ></i>
+                                            </div>
                                         </div>
+                                        {/* Hiển thị dòng chữ báo lỗi */}
+                                        {formik.touched.password && formik.errors.password && (
+                                            <div className="text-danger fw-bold small mt-1 ms-1">{formik.errors.password}</div>
+                                        )}
                                     </div>
 
-                                    <div className="d-grid gap-2">
-                                        <button type="submit" className="btn text-white shadow-sm" style={{ background: 'linear-gradient(45deg, #198754, #145a32)', padding: '12px', borderRadius: '50px', fontWeight: 'bold' }}>
-                                            Đăng nhập ngay
+                                    <div className="d-grid gap-2 mt-4">
+                                        <button type="submit" disabled={formik.isSubmitting} className="btn text-white shadow-sm" style={{ background: 'linear-gradient(45deg, #198754, #145a32)', padding: '12px', borderRadius: '50px', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                            {formik.isSubmitting ? (
+                                                <><span className="spinner-border spinner-border-sm me-2"></span> Đang đăng nhập...</>
+                                            ) : (
+                                                'Đăng nhập ngay'
+                                            )}
                                         </button>
                                     </div>
                                 </form>
