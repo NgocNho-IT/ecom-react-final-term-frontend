@@ -35,7 +35,7 @@ const CartPage = () => {
 
     const calculateTotal = () => {
         return cartItems.reduce((total, item) => {
-            const variant = item.productId?.variants?.find(v => v._id === item.variantId);
+            const variant = item.productId?.variants?.find(v => v._id.toString() === item.variantId.toString());
             if (!variant) return total;
             const price = variant.isSale ? variant.salePrice : variant.price;
             return total + (price * item.quantity);

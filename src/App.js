@@ -29,6 +29,7 @@ import EditCategoryPage from './pages/EditCategoryPage';
 import AddProductPage from './pages/AddProductPage';
 import EditProductPage from './pages/EditProductPage';   
 import EditOrderPage from './pages/EditOrderPage';
+import AdminUserEditPage from './pages/AdminUserEditPage';
 
 function App() {
   return (
@@ -65,6 +66,7 @@ function App() {
                 <Route path="/admin/product/edit/:id" element={<EditProductPage />} />
                 
                 <Route path="/admin/order/edit/:id" element={<EditOrderPage />} />
+                <Route path="/admin/user/edit/:id" element={<AdminUserEditPage />} />
               </Routes>
           </main>
           <Footer />
