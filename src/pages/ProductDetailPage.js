@@ -42,7 +42,7 @@ const ProductDetailPage = () => {
                 setReviews(data.reviews || []); 
                 setStats(data.ratingStats || { average: 0, total: 0, distribution: {1:0, 2:0, 3:0, 4:0, 5:0} });
                 
-                // FIX: Luôn cập nhật biến thể đầu tiên khi tải sản phẩm mới
+                // Luôn cập nhật biến thể đầu tiên khi tải sản phẩm mới
                 if (data.product.variants && data.product.variants.length > 0) {
                     setSelectedVariant(data.product.variants[0]);
                 }
@@ -56,7 +56,7 @@ const ProductDetailPage = () => {
 
     useEffect(() => {
         setLoading(true);
-        // FIX: Reset biến thể về null ngay khi ID sản phẩm thay đổi để xóa dữ liệu cũ
+        // Reset biến thể về null ngay khi ID sản phẩm thay đổi để xóa dữ liệu cũ
         setSelectedVariant(null);
         
         fetchProductDetail();
@@ -64,15 +64,23 @@ const ProductDetailPage = () => {
         if (!window.location.hash) {
             window.scrollTo(0, 0);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     useEffect(() => {
         if (selectedVariant && quantity > selectedVariant.stock) {
             setQuantity(selectedVariant.stock === 0 ? 0 : 1);
         }
-    }, [selectedVariant]);
+    }, [selectedVariant, quantity]);
 
     const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price || 0);
+
+    // Hàm kiểm tra quyền sở hữu bài đánh giá chuẩn xác nhất
+    const isOwner = (reviewUser) => {
+        if (!user || !reviewUser) return false;
+        const reviewUserId = typeof reviewUser === 'object' ? reviewUser._id : reviewUser;
+        return user._id === reviewUserId;
+    };
 
     const handleAddToCart = async () => {
         if (!user) {
@@ -80,7 +88,6 @@ const ProductDetailPage = () => {
             navigate('/login');
             return;
         }
-        // Kiểm tra selectedVariant để tránh lỗi undefined khi chưa kịp load
         if (!selectedVariant) return;
 
         if (quantity > selectedVariant.stock) {
@@ -226,8 +233,6 @@ const ProductDetailPage = () => {
             </style>
 
             <div className="container">
-                {/* ĐÃ LOẠI BỎ THANH ĐIỀU HƯỚNG BREADCRUMB Ở ĐÂY THEO Ý BẠN */}
-
                 <div className="row">
                     {/* ẢNH SẢN PHẨM */}
                     <div className="col-md-5 mb-4">
@@ -378,6 +383,24 @@ const ProductDetailPage = () => {
                     </div>
                 </div>
 
+                {/* YOUTUBE VIDEO SECTION */}
+                {product.youtubeId && (
+                    <div className="row mt-5 pt-3">
+                        <div className="col-12">
+                            <h4 className="fw-bold text-dark mb-4 border-start border-danger border-5 ps-3">VIDEO SẢN PHẨM</h4>
+                            <div className="card border-0 custom-shadow rounded-4 overflow-hidden bg-white">
+                                <div className="ratio ratio-16x9">
+                                    <iframe 
+                                        src={`https://www.youtube.com/embed/${product.youtubeId}`} 
+                                        title="YouTube video" 
+                                        allowFullScreen
+                                    ></iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="row mt-5 pt-3">
                     <div className="col-12">
                         <h4 className="fw-bold text-dark mb-4 border-start border-success border-4 ps-3">CÓ THỂ BẠN CŨNG THÍCH</h4>
@@ -482,30 +505,99 @@ const ProductDetailPage = () => {
                                                         <>
                                                             <div className="d-flex justify-content-between align-items-start mb-2">
                                                                 <div>
-                                                                    <h6 className="fw-bold mb-1 text-dark fs-6 d-flex align-items-center">{rv.name} {rv.user === user?._id && <span className="badge bg-success ms-2 fw-bold shadow-sm" style={{fontSize:'10px'}}>Của bạn</span>}</h6>
+                                                                    <h6 className="fw-bold mb-1 text-dark fs-6 d-flex align-items-center">
+                                                                        {rv.name} 
+                                                                        {isOwner(rv.user) && <span className="badge bg-success ms-2 fw-bold shadow-sm" style={{fontSize:'10px'}}>Của bạn</span>}
+                                                                    </h6>
                                                                     <div className="mb-2 d-flex">{renderStars(rv.rating, '0.85rem')}</div>
                                                                 </div>
-                                                                <small className="text-muted bg-light px-3 py-1 rounded-pill border" style={{fontSize: '11px', fontWeight: '500'}}><i className="bi bi-clock me-1"></i>{new Date(rv.createdAt).toLocaleString('vi-VN')}</small>
+                                                                <small className="text-muted bg-light px-3 py-1 rounded-pill border" style={{fontSize: '11px', fontWeight: '500'}}>
+                                                                    <i className="bi bi-clock me-1"></i>{new Date(rv.createdAt).toLocaleString('vi-VN')}
+                                                                </small>
                                                             </div>
                                                             <p className="mb-4 text-dark bg-light p-3 rounded-3" style={{ lineHeight: '1.6', fontSize: '15px' }}>{rv.content}</p>
+                                                            
                                                             <div className="d-flex gap-3 border-top pt-3">
-                                                                {user?._id === rv.user && <button className="btn btn-link btn-sm p-0 text-primary text-decoration-none fw-bold" onClick={() => { setEditingReviewId(rv._id); setEditRating(rv.rating); setEditContent(rv.content); }}><i className="bi bi-pencil-square me-1"></i>Sửa bài</button>}
-                                                                {(user?._id === rv.user || user?.isAdmin) && <button className="btn btn-link btn-sm p-0 text-danger text-decoration-none fw-bold" onClick={() => handleDeleteReview(rv._id)}><i className="bi bi-trash3-fill me-1"></i>Xóa bài</button>}
-                                                                {user?.isAdmin && <button className="btn btn-link btn-sm p-0 text-success text-decoration-none fw-bold ms-auto" onClick={() => setReplyingTo(replyingTo === rv._id ? null : rv._id)}><i className="bi bi-reply-fill me-1"></i>Phản hồi</button>}
+                                                                {isOwner(rv.user) && (
+                                                                    <button className="btn btn-link btn-sm p-0 text-primary text-decoration-none fw-bold" onClick={() => { setEditingReviewId(rv._id); setEditRating(rv.rating); setEditContent(rv.content); }}>
+                                                                        <i className="bi bi-pencil-square me-1"></i>Sửa bài
+                                                                    </button>
+                                                                )}
+                                                                {(isOwner(rv.user) || user?.isAdmin) && (
+                                                                    <button className="btn btn-link btn-sm p-0 text-danger text-decoration-none fw-bold" onClick={() => handleDeleteReview(rv._id)}>
+                                                                        <i className="bi bi-trash3-fill me-1"></i>Xóa bài
+                                                                    </button>
+                                                                )}
+                                                                {user?.isAdmin && (
+                                                                    <button className="btn btn-link btn-sm p-0 text-success text-decoration-none fw-bold ms-auto" onClick={() => setReplyingTo(replyingTo === rv._id ? null : rv._id)}>
+                                                                        <i className="bi bi-reply-fill me-1"></i>Phản hồi
+                                                                    </button>
+                                                                )}
                                                             </div>
+
                                                             {replyingTo === rv._id && (
                                                                 <div className="mt-3 bg-success bg-opacity-10 p-3 rounded-4 border border-success border-opacity-25">
                                                                     <div className="d-flex gap-2">
-                                                                        <input className="form-control border-0 rounded-pill px-4 shadow-sm" placeholder="Nhập câu trả lời của Cửa hàng..." value={replyContent} onChange={e => setReplyContent(e.target.value)} />
-                                                                        <button className="btn btn-success rounded-pill px-4 fw-bold shadow-sm" onClick={() => handleReplySubmit(rv._id)}><i className="bi bi-send-fill"></i></button>
+                                                                        <input className="form-control border-0 rounded-pill px-4 shadow-sm" placeholder="Nhập câu trả lời..." value={replyContent} onChange={e => setReplyContent(e.target.value)} />
+                                                                        <button className="btn btn-success rounded-pill px-4 fw-bold shadow-sm" onClick={() => handleReplySubmit(rv._id)}>
+                                                                            <i className="bi bi-send-fill"></i>
+                                                                        </button>
                                                                     </div>
                                                                 </div>
                                                             )}
+
+                                                            {/* HIỂN THỊ DANH SÁCH PHẢN HỒI (REPLIES) ĐÃ FIX NÚT SỬA/XÓA */}
                                                             {rv.replies?.map(rep => (
                                                                 <div key={rep._id} className="bg-white p-3 rounded-4 border-start border-4 border-success ms-4 mt-3 position-relative shadow-sm">
                                                                     <i className="bi bi-arrow-return-right position-absolute text-success fs-5" style={{left: '-25px', top: '15px'}}></i>
-                                                                    <span className="badge bg-success rounded-pill py-1 px-2 fw-bold small mb-2">Quản trị viên NNIT SHOP</span>
-                                                                    <p className="mb-0 text-dark" style={{fontSize: '14px'}}>{rep.content}</p>
+                                                                    
+                                                                    {editingReviewId === rep._id ? (
+                                                                        <div className="bg-light p-3 rounded-4 border border-warning shadow-inner mt-2">
+                                                                            <textarea 
+                                                                                className="form-control mb-3 rounded-3 border-0 p-3 shadow-sm" 
+                                                                                rows="2" 
+                                                                                value={editContent} 
+                                                                                onChange={e => setEditContent(e.target.value)}
+                                                                            ></textarea>
+                                                                            <div className="text-end">
+                                                                                <button className="btn btn-sm btn-secondary rounded-pill px-4 me-2 fw-bold" onClick={() => setEditingReviewId(null)}>Hủy</button>
+                                                                                <button className="btn btn-sm btn-warning rounded-pill px-4 fw-bold shadow-sm" onClick={() => handleEditSubmit(rep._id)}>
+                                                                                    <i className="bi bi-check-circle me-1"></i>Lưu
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <>
+                                                                            <div className="d-flex justify-content-between align-items-center mb-2">
+                                                                                <span className="badge bg-success rounded-pill py-1 px-2 fw-bold small">Quản trị viên NNIT SHOP</span>
+                                                                                <small className="text-muted" style={{fontSize: '11px'}}>
+                                                                                    {new Date(rep.createdAt).toLocaleString('vi-VN')}
+                                                                                </small>
+                                                                            </div>
+                                                                            <p className="mb-2 text-dark" style={{fontSize: '14px'}}>{rep.content}</p>
+                                                                            
+                                                                            {user?.isAdmin && (
+                                                                                <div className="d-flex gap-3 pt-2 border-top border-light mt-2">
+                                                                                    <button 
+                                                                                        className="btn btn-link btn-sm p-0 text-primary text-decoration-none fw-bold" 
+                                                                                        onClick={() => { 
+                                                                                            setEditingReviewId(rep._id); 
+                                                                                            setEditRating(5); 
+                                                                                            setEditContent(rep.content); 
+                                                                                        }}
+                                                                                    >
+                                                                                        <i className="bi bi-pencil-square me-1"></i>Sửa
+                                                                                    </button>
+                                                                                    <button 
+                                                                                        className="btn btn-link btn-sm p-0 text-danger text-decoration-none fw-bold" 
+                                                                                        onClick={() => handleDeleteReview(rep._id)}
+                                                                                    >
+                                                                                        <i className="bi bi-trash3-fill me-1"></i>Xóa
+                                                                                    </button>
+                                                                                </div>
+                                                                            )}
+                                                                        </>
+                                                                    )}
                                                                 </div>
                                                             ))}
                                                         </>

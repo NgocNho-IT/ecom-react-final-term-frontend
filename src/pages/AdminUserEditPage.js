@@ -13,6 +13,9 @@ const AdminUserEditPage = () => {
     const [formData, setFormData] = useState({
         firstName: '', lastName: '', email: '', phone: ''
     });
+    
+    // State mới cho việc đổi mật khẩu
+    const [newPassword, setNewPassword] = useState('');
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -54,6 +57,26 @@ const AdminUserEditPage = () => {
             }
         } catch (error) {
             alert(error.response?.data?.message || "Lỗi khi cập nhật!");
+        }
+    };
+
+    // HÀM MỚI: XỬ LÝ ĐỔI MẬT KHẨU
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        if (!newPassword || newPassword.length < 5) {
+            alert("Vui lòng nhập mật khẩu mới có ít nhất 5 ký tự!");
+            return;
+        }
+        if (window.confirm(`Xác nhận đổi mật khẩu cho tài khoản ${targetUser.email}?`)) {
+            try {
+                const { data } = await API.put(`/admin/user/${id}`, { password: newPassword });
+                if (data.success) {
+                    alert("Cấp lại mật khẩu thành công!");
+                    setNewPassword(''); // Xóa rỗng ô input sau khi đổi xong
+                }
+            } catch (error) {
+                alert(error.response?.data?.message || "Lỗi khi đổi mật khẩu!");
+            }
         }
     };
 
@@ -204,7 +227,7 @@ const AdminUserEditPage = () => {
                     {/* CỘT TRÁI: FORM CHỈNH SỬA THÔNG TIN */}
                     {/* ========================================= */}
                     <div className="col-lg-8">
-                        <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5 h-100 bg-white">
+                        <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4 bg-white">
                             <h5 className="fw-bold mb-4 text-dark"><i className="bi bi-person-lines-fill me-2 text-success"></i>Cập nhật thông tin cá nhân</h5>
                             
                             <form onSubmit={handleSaveInfo}>
@@ -233,6 +256,32 @@ const AdminUserEditPage = () => {
                                     <button type="submit" className="btn btn-success btn-lg px-5 rounded-pill fw-bold shadow-sm">
                                         <i className="bi bi-check-circle-fill me-2"></i>Lưu Thông Tin
                                     </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        {/* MỚI THÊM: CARD ĐỔI MẬT KHẨU TÁCH BIỆT */}
+                        <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+                            <h5 className="fw-bold mb-3 text-dark"><i className="bi bi-key-fill me-2 text-warning"></i>Cấp lại mật khẩu mới</h5>
+                            <p className="text-muted small mb-4">Nhập mật khẩu mới bên dưới để thiết lập lại quyền truy cập cho người dùng này. Mã hóa tự động 256-bit.</p>
+                            
+                            <form onSubmit={handleChangePassword}>
+                                <div className="row align-items-end">
+                                    <div className="col-md-8 mb-3 mb-md-0">
+                                        <label className="form-label text-muted fw-bold small text-uppercase">Mật khẩu mới</label>
+                                        <input 
+                                            type="text" 
+                                            className="form-control rounded-3 custom-input" 
+                                            placeholder="Nhập ít nhất 5 ký tự..." 
+                                            value={newPassword} 
+                                            onChange={(e) => setNewPassword(e.target.value)} 
+                                        />
+                                    </div>
+                                    <div className="col-md-4 text-end">
+                                        <button type="submit" className="btn btn-warning w-100 rounded-3 fw-bold shadow-sm" disabled={isSelf}>
+                                            Cập Nhật Mật Khẩu
+                                        </button>
+                                    </div>
                                 </div>
                             </form>
                         </div>

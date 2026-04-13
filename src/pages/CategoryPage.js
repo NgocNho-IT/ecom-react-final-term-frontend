@@ -47,7 +47,7 @@ const CategoryPage = () => {
         window.scrollTo({ top: 300, behavior: 'smooth' }); 
     };
 
-    // Hàm render sao thông minh (Đồng bộ với HomePage)
+    // Hàm render sao thông minh
     const renderStars = (rating) => {
         const stars = [];
         for (let i = 1; i <= 5; i++) {
@@ -62,7 +62,6 @@ const CategoryPage = () => {
         return stars;
     };
 
-    // Màn hình Loading chuyên nghiệp (Đồng bộ với HomePage)
     if (loading && products.length === 0) {
         return (
             <div className="d-flex flex-column justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
@@ -76,14 +75,18 @@ const CategoryPage = () => {
         <>
             <style>
                 {`
+                    html { scroll-behavior: smooth; }
+                    
+                    /* PRODUCT CARDS ĐỒNG BỘ HOMEPAGE */
                     .product-card {
-                        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+                        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
                         border-radius: 12px;
                         border: 1px solid #f0f2f5;
+                        background-color: #fff;
                     }
                     .product-card:hover {
-                        transform: translateY(-8px);
-                        box-shadow: 0 15px 30px rgba(0,0,0,0.08) !important;
+                        transform: translateY(-6px);
+                        box-shadow: 0 12px 24px rgba(0,0,0,0.06) !important;
                         border-color: #198754 !important;
                         z-index: 2;
                     }
@@ -92,13 +95,12 @@ const CategoryPage = () => {
                         border-top-left-radius: 12px;
                         border-top-right-radius: 12px;
                         padding: 1.5rem;
-                        background-color: #ffffff;
                     }
                     .product-img {
-                        transition: transform 0.5s ease;
+                        transition: transform 0.4s ease;
                     }
                     .product-card:hover .product-img {
-                        transform: scale(1.08);
+                        transform: scale(1.05);
                     }
                     .badge-hot {
                         background: linear-gradient(45deg, #ff416c, #ff4b2b);
@@ -116,6 +118,14 @@ const CategoryPage = () => {
                         text-overflow: ellipsis;
                         min-height: 40px;
                         line-height: 1.4;
+                    }
+
+                    /* CSS PHÂN TRANG RESPONSIVE */
+                    .page-link {
+                        transition: all 0.2s ease;
+                    }
+                    .page-link:hover {
+                        transform: translateY(-2px);
                     }
                 `}
             </style>
@@ -141,7 +151,6 @@ const CategoryPage = () => {
                                 <div className="col mb-5" key={product._id}>
                                     <div className="card h-100 shadow-sm border product-card bg-white position-relative">
                                         
-                                        {/* HỆ THỐNG NHÃN GÓC TRÁI (BÁN CHẠY) */}
                                         <div className="position-absolute d-flex flex-column gap-1" style={{ top: '12px', left: '12px', zIndex: 2 }}>
                                             {isHot && (
                                                 <span className="badge badge-hot text-white shadow-sm px-2 py-1 rounded-2">
@@ -150,7 +159,6 @@ const CategoryPage = () => {
                                             )}
                                         </div>
 
-                                        {/* HỆ THỐNG NHÃN GÓC PHẢI (GIẢM GIÁ) */}
                                         <div className="position-absolute d-flex flex-column gap-1" style={{ top: '12px', right: '12px', zIndex: 2 }}>
                                             {defaultVariant?.isSale && (
                                                 <span className="badge bg-danger text-white shadow-sm px-2 py-1 rounded-2 fw-bold">
@@ -159,7 +167,6 @@ const CategoryPage = () => {
                                             )}
                                         </div>
 
-                                        {/* ẢNH SẢN PHẨM CÓ ZOOM */}
                                         <div className="img-wrapper bg-white">
                                             <Link to={`/product/${product._id}`}>
                                                 <img 
@@ -179,7 +186,6 @@ const CategoryPage = () => {
                                                 </Link>
                                             </h6>
                                             
-                                            {/* ĐÁNH GIÁ VÀ ĐÃ BÁN (CHUẨN SHOPEE) */}
                                             <div className="d-flex justify-content-center align-items-center mb-3 mt-auto">
                                                 <div className="d-flex align-items-center me-2 border-end pe-2 border-secondary border-opacity-25">
                                                     {renderStars(product.rating)}
@@ -192,7 +198,6 @@ const CategoryPage = () => {
                                                 </div>
                                             </div>
 
-                                            {/* GIÁ TIỀN */}
                                             <div className="mb-2">
                                                 {defaultVariant ? (
                                                     defaultVariant.isSale ? (
@@ -229,29 +234,40 @@ const CategoryPage = () => {
 
                     </div> 
 
-                    {/* NÚT BẤM PHÂN TRANG */}
+                    {/* PHÂN TRANG RESPONSIVE HOÀN HẢO */}
                     {totalPages > 1 && (
-                        <div className="d-flex justify-content-center mt-5">
+                        <div className="d-flex justify-content-center mt-4 mb-5">
                             <nav aria-label="Page navigation">
-                                <ul className="pagination pagination-lg shadow-sm rounded-pill overflow-hidden">
+                                <ul className="pagination flex-wrap justify-content-center gap-2 border-0 mb-0">
                                     <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                                        <button className="page-link text-success fw-bold border-0 bg-white" onClick={() => handlePageChange(currentPage - 1)}>
-                                            <i className="bi bi-chevron-left me-1"></i>Trước
+                                        <button 
+                                            className="page-link text-success fw-bold border-0 bg-white rounded-pill shadow-sm px-3 d-flex align-items-center h-100" 
+                                            onClick={() => handlePageChange(currentPage - 1)}
+                                        >
+                                            <i className="bi bi-chevron-left"></i>
+                                            <span className="d-none d-sm-inline ms-1">Trước</span>
                                         </button>
                                     </li>
+                                    
                                     {[...Array(totalPages)].map((_, index) => (
                                         <li key={index} className={`page-item ${currentPage === index + 1 ? 'active' : ''}`}>
                                             <button 
-                                                className={`page-link fw-bold border-0 ${currentPage === index + 1 ? 'bg-success text-white' : 'text-success bg-white'}`}
+                                                className={`page-link fw-bold border-0 shadow-sm rounded-circle d-flex align-items-center justify-content-center ${currentPage === index + 1 ? 'bg-success text-white' : 'text-success bg-white'}`}
+                                                style={{ width: '42px', height: '42px' }}
                                                 onClick={() => handlePageChange(index + 1)}
                                             >
                                                 {index + 1}
                                             </button>
                                         </li>
                                     ))}
+                                    
                                     <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                                        <button className="page-link text-success fw-bold border-0 bg-white" onClick={() => handlePageChange(currentPage + 1)}>
-                                            Sau<i className="bi bi-chevron-right ms-1"></i>
+                                        <button 
+                                            className="page-link text-success fw-bold border-0 bg-white rounded-pill shadow-sm px-3 d-flex align-items-center h-100" 
+                                            onClick={() => handlePageChange(currentPage + 1)}
+                                        >
+                                            <span className="d-none d-sm-inline me-1">Sau</span>
+                                            <i className="bi bi-chevron-right"></i>
                                         </button>
                                     </li>
                                 </ul>
