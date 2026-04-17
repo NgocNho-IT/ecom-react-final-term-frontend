@@ -368,10 +368,12 @@ const AdminDashboardPage = () => {
             <div className="mobile-topbar bg-white shadow-sm p-3 align-items-center justify-content-between z-3 border-bottom">
                 <h5 className="fw-bolder text-success mb-0" onClick={() => hasPerm('DASHBOARD') && handleTabChange('overview')}>NNIT ADMIN</h5>
                 <div className="d-flex gap-2">
-                    {hasPerm('PRODUCTS') && (
+                    {/* KIỂM TRA QUYỀN THÊM SẢN PHẨM */}
+                    {hasPerm('ADD_PRODUCT') && (
                         <Link to="/admin/product/add" className="btn btn-sm btn-success shadow-sm fw-bold"><i className="bi bi-plus-lg"></i> Mới</Link>
                     )}
-                    {hasPerm('DASHBOARD') && (
+                    {/* KIỂM TRA QUYỀN XUẤT EXCEL */}
+                    {hasPerm('EXPORT_EXCEL') && (
                         <button onClick={handleExportExcel} disabled={isExporting} className="btn btn-sm btn-outline-success shadow-sm fw-bold">
                             {isExporting ? <i className="bi bi-hourglass"></i> : <i className="bi bi-file-earmark-excel"></i>} Excel
                         </button>
@@ -432,13 +434,15 @@ const AdminDashboardPage = () => {
                 </div>
 
                 <div className="admin-sidebar-footer mt-auto pt-3 border-top">
-                    {hasPerm('PRODUCTS') && (
+                    {/* KIỂM TRA QUYỀN THÊM SẢN PHẨM Ở SIDEBAR */}
+                    {hasPerm('ADD_PRODUCT') && (
                         <Link to="/admin/product/add" className={`btn btn-success w-100 rounded-pill btn-sm mb-2 py-2 fw-bold ${isSidebarCollapsed ? 'px-0' : ''}`} title={isSidebarCollapsed ? "Thêm Sản Phẩm" : ""}>
                             <i className={`bi bi-plus-circle ${isSidebarCollapsed ? 'fs-5' : 'me-1'}`}></i>
                             <span className="sidebar-text">Thêm Sản Phẩm</span>
                         </Link>
                     )}
-                    {hasPerm('DASHBOARD') && (
+                    {/* KIỂM TRA QUYỀN XUẤT EXCEL Ở SIDEBAR */}
+                    {hasPerm('EXPORT_EXCEL') && (
                         <button onClick={handleExportExcel} disabled={isExporting} className={`btn btn-outline-success w-100 rounded-pill btn-sm mb-2 py-2 fw-bold ${isSidebarCollapsed ? 'px-0' : ''}`} title={isSidebarCollapsed ? "Xuất Excel" : ""}>
                             {isExporting ? <i className="bi bi-hourglass-split"></i> : <><i className={`bi bi-file-earmark-excel ${isSidebarCollapsed ? 'fs-5' : 'me-1'}`}></i><span className="sidebar-text">Xuất Excel</span></>}
                         </button>

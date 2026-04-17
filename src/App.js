@@ -31,6 +31,15 @@ import EditProductPage from './pages/EditProductPage';
 import EditOrderPage from './pages/EditOrderPage';
 import AdminUserEditPage from './pages/AdminUserEditPage';
 
+// ===============================================
+// MỚI THÊM: Import 5 trang hãng riêng biệt
+// ===============================================
+import ApplePage from './pages/ApplePage';
+import SamsungPage from './pages/SamsungPage';
+import XiaomiPage from './pages/XiaomiPage';
+import OppoPage from './pages/OppoPage';
+import VivoPage from './pages/VivoPage';
+
 function App() {
   return (
     <AuthProvider>
@@ -53,6 +62,15 @@ function App() {
                 <Route path="/categories" element={<CategorySummaryPage />} />
                 <Route path="/category/:id" element={<CategoryPage />} />
                 <Route path="/about" element={<AboutPage />} />
+
+                {/* =============================================== */}
+                {/* MỚI THÊM: 5 Route cho 5 trang thương hiệu */}
+                {/* =============================================== */}
+                <Route path="/apple/:id" element={<ApplePage />} />
+                <Route path="/samsung/:id" element={<SamsungPage />} />
+                <Route path="/xiaomi/:id" element={<XiaomiPage />} />
+                <Route path="/oppo/:id" element={<OppoPage />} />
+                <Route path="/vivo/:id" element={<VivoPage />} />
 
                 <Route path="/admin" element={<AdminDashboardPage />} />
                 

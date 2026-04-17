@@ -19,6 +19,17 @@ const Footer = () => {
         fetchCategories();
     }, []);
 
+    // HÀM MỚI: Tự động điều hướng về 5 trang thương hiệu riêng biệt
+    const getBrandRoute = (catName, id) => {
+        const name = catName.toLowerCase();
+        if (name.includes('iphone') || name.includes('apple')) return `/apple/${id}`;
+        if (name.includes('samsung')) return `/samsung/${id}`;
+        if (name.includes('xiaomi')) return `/xiaomi/${id}`;
+        if (name.includes('vivo')) return `/vivo/${id}`;
+        if (name.includes('oppo')) return `/oppo/${id}`;
+        return `/category/${id}`; // Fallback dự phòng
+    };
+
     return (
         <footer className="bg-success text-white pt-5 pb-4 mt-5 shadow-lg">
             <div className="container text-center text-md-start">
@@ -40,7 +51,8 @@ const Footer = () => {
                         <h6 className="text-uppercase mb-4 fw-bold text-white">Danh Mục</h6>
                         {categories.length > 0 ? categories.map((cat) => (
                             <p key={cat._id}>
-                                <Link to={`/category/${cat._id}`} className="text-light text-decoration-none small hover-link">
+                                {/* ĐÃ CẬP NHẬT GỌI HÀM getBrandRoute TẠI ĐÂY */}
+                                <Link to={getBrandRoute(cat.name, cat._id)} className="text-light text-decoration-none small hover-link">
                                     {cat.name}
                                 </Link>
                             </p>

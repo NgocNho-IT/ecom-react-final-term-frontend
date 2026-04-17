@@ -41,10 +41,9 @@ const Header = () => {
         };
 
         window.addEventListener('cartUpdated', handleCartUpdate);
-        
         return () => window.removeEventListener('cartUpdated', handleCartUpdate);
     }, [user]);
-
+    
     useEffect(() => {
         const delayDebounceFn = setTimeout(async () => {
             if (searchQuery.trim().length > 0) {
@@ -54,9 +53,7 @@ const Header = () => {
                         setSearchResults(data.products);
                         setShowDropdown(true);
                     }
-                } catch (error) {
-                    console.error("Lỗi tìm kiếm:", error);
-                }
+                } catch (error) { console.error("Lỗi tìm kiếm:", error); }
             } else {
                 setSearchResults([]);
                 setShowDropdown(false);
@@ -88,6 +85,17 @@ const Header = () => {
             navigate(`/search?q=${searchQuery}`);
             setShowDropdown(false);
         }
+    };
+
+    // HÀM MỚI: XÁC ĐỊNH ĐƯỜNG DẪN THEO TÊN HÃNG
+    const getBrandRoute = (catName, id) => {
+        const name = catName.toLowerCase();
+        if (name.includes('iphone') || name.includes('apple')) return `/apple/${id}`;
+        if (name.includes('samsung')) return `/samsung/${id}`;
+        if (name.includes('xiaomi')) return `/xiaomi/${id}`;
+        if (name.includes('vivo')) return `/vivo/${id}`;
+        if (name.includes('oppo')) return `/oppo/${id}`;
+        return `/category/${id}`;
     };
 
     return (
@@ -126,15 +134,13 @@ const Header = () => {
                             <li className="nav-item"><Link className="nav-link" to="/">Trang chủ</Link></li>
                             <li className="nav-item"><Link className="nav-link" to="/about">Giới thiệu</Link></li>
                             <li className="nav-item dropdown">
-                                <a className="nav-link dropdown-toggle" href="#" id="catDrop" role="button" data-bs-toggle="dropdown">
-                                    Danh mục
-                                </a>
+                                <a className="nav-link dropdown-toggle" href="#" id="catDrop" role="button" data-bs-toggle="dropdown">Danh mục</a>
                                 <ul className="dropdown-menu border-0 shadow-sm" style={{ borderRadius: '12px' }}>
                                     <li><Link className="dropdown-item fw-bold text-success" to="/categories">Tất cả sản phẩm</Link></li>
                                     <li><hr className="dropdown-divider" /></li>
                                     {categories.length > 0 ? categories.map((cat) => (
                                         <li key={cat._id}>
-                                            <Link className="dropdown-item" to={`/category/${cat._id}`}>{cat.name}</Link>
+                                            <Link className="dropdown-item" to={getBrandRoute(cat.name, cat._id)}>{cat.name}</Link>
                                         </li>
                                     )) : (
                                         <li><span className="dropdown-item text-muted small">Đang tải...</span></li>

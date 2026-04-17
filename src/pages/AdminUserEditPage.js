@@ -3,14 +3,16 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import API from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 
-// BẢNG DANH SÁCH CÁC QUYỀN MODULE TRONG HỆ THỐNG
+// BẢNG DANH SÁCH CÁC QUYỀN MODULE TRONG HỆ THỐNG ĐÃ ĐƯỢC BỔ SUNG
 const MODULE_PERMISSIONS = [
     { id: 'DASHBOARD', name: 'Xem Tổng quan (Thống kê)', icon: 'bi-graph-up' },
     { id: 'USERS', name: 'Quản lý Tài khoản', icon: 'bi-people' },
     { id: 'ORDERS', name: 'Quản lý Đơn hàng', icon: 'bi-cart3' },
     { id: 'PRODUCTS', name: 'Quản lý Sản phẩm', icon: 'bi-box-seam' },
+    { id: 'ADD_PRODUCT', name: 'Thêm Sản phẩm mới', icon: 'bi-plus-circle' },
     { id: 'CATEGORIES', name: 'Quản lý Danh mục', icon: 'bi-tags' },
-    { id: 'REVIEWS', name: 'Kiểm duyệt Đánh giá', icon: 'bi-chat-left-dots' }
+    { id: 'REVIEWS', name: 'Kiểm duyệt Đánh giá', icon: 'bi-chat-left-dots' },
+    { id: 'EXPORT_EXCEL', name: 'Xuất báo cáo Excel', icon: 'bi-file-earmark-excel' }
 ];
 
 const AdminUserEditPage = () => {
@@ -327,7 +329,7 @@ const AdminUserEditPage = () => {
                                                     <div className={`perm-card p-3 d-flex align-items-center justify-content-between ${isActive ? 'active' : ''}`}>
                                                         <div className="d-flex align-items-center">
                                                             <i className={`bi ${mod.icon} fs-4 me-3 ${isActive ? 'text-success' : 'text-muted'}`}></i>
-                                                            <span className={`fw-bold ${isActive ? 'text-success' : 'text-secondary'}`}>{mod.name}</span>
+                                                            <span className={`fw-bold ${isActive ? 'text-success' : 'text-secondary'}`} style={{fontSize: '14px'}}>{mod.name}</span>
                                                         </div>
                                                         <div className="form-check form-switch m-0">
                                                             <input 
