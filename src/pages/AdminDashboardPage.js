@@ -13,9 +13,30 @@ const AdminDashboardPage = () => {
     const navigate = useNavigate();
     
     // ==========================================
+    // HÀM KIỂM TRA QUYỀN TRUY CẬP (RBAC)
+    // ==========================================
+    const hasPerm = (moduleName) => {
+        if (user?.isSuperAdmin) return true;
+        return user?.permissions?.includes(moduleName);
+    };
+
+    // Xác định Tab mặc định dựa trên quyền hiện có
+    const getDefaultTab = () => {
+        const savedTab = localStorage.getItem('adminActiveTab');
+        if (savedTab && hasPerm(savedTab.toUpperCase())) return savedTab;
+        if (hasPerm('DASHBOARD')) return 'overview';
+        if (hasPerm('USERS')) return 'users';
+        if (hasPerm('ORDERS')) return 'orders';
+        if (hasPerm('PRODUCTS')) return 'products';
+        if (hasPerm('CATEGORIES')) return 'categories';
+        if (hasPerm('REVIEWS')) return 'reviews';
+        return 'unauthorized'; 
+    };
+
+    // ==========================================
     // QUẢN LÝ TAB & SIDEBAR MỚI (THU VÔ THU RA)
     // ==========================================
-    const [activeTab, setActiveTab] = useState(() => localStorage.getItem('adminActiveTab') || 'overview');
+    const [activeTab, setActiveTab] = useState(getDefaultTab());
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     const handleTabChange = (tab) => { 
@@ -213,6 +234,18 @@ const AdminDashboardPage = () => {
         );
     }
 
+    // NẾU TÀI KHOẢN KHÔNG CÓ BẤT KỲ QUYỀN NÀO
+    if (activeTab === 'unauthorized') {
+        return (
+            <div className="d-flex flex-column align-items-center justify-content-center vh-100 bg-light text-center" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', zIndex: 9999 }}>
+                <i className="bi bi-shield-lock text-danger" style={{fontSize: '5rem'}}></i>
+                <h3 className="mt-3 fw-bold">Tài khoản chưa được cấp quyền!</h3>
+                <p className="text-muted">Vui lòng liên hệ Quản trị viên Tối cao (Super Admin) để được cấp quyền sử dụng hệ thống.</p>
+                <Link to="/" className="btn btn-success mt-3 rounded-pill px-4">Về Trang Chủ</Link>
+            </div>
+        );
+    }
+
     return (
         <div className="admin-layout">
             <style>
@@ -303,13 +336,13 @@ const AdminDashboardPage = () => {
                             flex: 1;
                             text-align: center;
                             justify-content: center !important;
-                            color: #adb5bd !important; /* Màu nhạt khi không active */
+                            color: #adb5bd !important; 
                         }
                         
                         /* ĐÂY LÀ ĐOẠN FIX LỖI BAY MÀU TRÊN MOBILE */
                         .admin-sidebar .nav-pills .nav-link.active {
                             background-color: transparent !important; 
-                            color: #198754 !important; /* Đổi màu chữ/icon thành Xanh lá */
+                            color: #198754 !important; 
                             box-shadow: none !important;
                             font-weight: 800;
                         }
@@ -333,12 +366,16 @@ const AdminDashboardPage = () => {
 
             {/* TOPBAR RIÊNG CHO MOBILE */}
             <div className="mobile-topbar bg-white shadow-sm p-3 align-items-center justify-content-between z-3 border-bottom">
-                <h5 className="fw-bolder text-success mb-0" onClick={() => handleTabChange('overview')}>NNIT ADMIN</h5>
+                <h5 className="fw-bolder text-success mb-0" onClick={() => hasPerm('DASHBOARD') && handleTabChange('overview')}>NNIT ADMIN</h5>
                 <div className="d-flex gap-2">
-                    <Link to="/admin/product/add" className="btn btn-sm btn-success shadow-sm fw-bold"><i className="bi bi-plus-lg"></i> Mới</Link>
-                    <button onClick={handleExportExcel} disabled={isExporting} className="btn btn-sm btn-outline-success shadow-sm fw-bold">
-                        {isExporting ? <i className="bi bi-hourglass"></i> : <i className="bi bi-file-earmark-excel"></i>} Excel
-                    </button>
+                    {hasPerm('PRODUCTS') && (
+                        <Link to="/admin/product/add" className="btn btn-sm btn-success shadow-sm fw-bold"><i className="bi bi-plus-lg"></i> Mới</Link>
+                    )}
+                    {hasPerm('DASHBOARD') && (
+                        <button onClick={handleExportExcel} disabled={isExporting} className="btn btn-sm btn-outline-success shadow-sm fw-bold">
+                            {isExporting ? <i className="bi bi-hourglass"></i> : <i className="bi bi-file-earmark-excel"></i>} Excel
+                        </button>
+                    )}
                     <Link to="/" className="btn btn-sm btn-outline-dark shadow-sm"><i className="bi bi-house-door-fill"></i></Link>
                 </div>
             </div>
@@ -347,7 +384,7 @@ const AdminDashboardPage = () => {
             <div className="admin-sidebar p-3">
                 <div className={`admin-sidebar-header d-flex ${isSidebarCollapsed ? 'justify-content-center' : 'justify-content-between'} align-items-center mb-4 mt-2 pb-3 border-bottom`}>
                     {!isSidebarCollapsed && (
-                        <h4 className="fw-bolder text-success mb-0 cursor-pointer text-nowrap" onClick={() => handleTabChange('overview')} style={{ cursor: 'pointer', letterSpacing: '0.5px' }}>
+                        <h4 className="fw-bolder text-success mb-0 cursor-pointer text-nowrap" onClick={() => hasPerm('DASHBOARD') && handleTabChange('overview')} style={{ cursor: 'pointer', letterSpacing: '0.5px' }}>
                             NNIT ADMIN
                         </h4>
                     )}
@@ -362,34 +399,50 @@ const AdminDashboardPage = () => {
                 </div>
 
                 <div className="nav flex-column nav-pills flex-grow-1 overflow-y-auto overflow-x-hidden">
-                    <button className={`nav-link ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => handleTabChange('overview')} title={isSidebarCollapsed ? "Tổng quan" : ""}>
-                        <i className="bi bi-graph-up"></i><span className="sidebar-text">Tổng quan</span>
-                    </button>
-                    <button className={`nav-link ${activeTab === 'users' ? 'active' : ''}`} onClick={() => handleTabChange('users')} title={isSidebarCollapsed ? "Tài khoản" : ""}>
-                        <i className="bi bi-people"></i><span className="sidebar-text">Tài khoản</span>
-                    </button>
-                    <button className={`nav-link ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => handleTabChange('orders')} title={isSidebarCollapsed ? "Đơn hàng" : ""}>
-                        <i className="bi bi-cart3"></i><span className="sidebar-text">Đơn hàng</span>
-                    </button>
-                    <button className={`nav-link ${activeTab === 'products' ? 'active' : ''}`} onClick={() => handleTabChange('products')} title={isSidebarCollapsed ? "Sản phẩm" : ""}>
-                        <i className="bi bi-box-seam"></i><span className="sidebar-text">Sản phẩm</span>
-                    </button>
-                    <button className={`nav-link ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => handleTabChange('categories')} title={isSidebarCollapsed ? "Danh mục" : ""}>
-                        <i className="bi bi-tags"></i><span className="sidebar-text">Danh mục</span>
-                    </button>
-                    <button className={`nav-link ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => handleTabChange('reviews')} title={isSidebarCollapsed ? "Đánh giá" : ""}>
-                        <i className="bi bi-chat-left-dots"></i><span className="sidebar-text">Đánh giá</span>
-                    </button>
+                    {hasPerm('DASHBOARD') && (
+                        <button className={`nav-link ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => handleTabChange('overview')} title={isSidebarCollapsed ? "Tổng quan" : ""}>
+                            <i className="bi bi-graph-up"></i><span className="sidebar-text">Tổng quan</span>
+                        </button>
+                    )}
+                    {hasPerm('USERS') && (
+                        <button className={`nav-link ${activeTab === 'users' ? 'active' : ''}`} onClick={() => handleTabChange('users')} title={isSidebarCollapsed ? "Tài khoản" : ""}>
+                            <i className="bi bi-people"></i><span className="sidebar-text">Tài khoản</span>
+                        </button>
+                    )}
+                    {hasPerm('ORDERS') && (
+                        <button className={`nav-link ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => handleTabChange('orders')} title={isSidebarCollapsed ? "Đơn hàng" : ""}>
+                            <i className="bi bi-cart3"></i><span className="sidebar-text">Đơn hàng</span>
+                        </button>
+                    )}
+                    {hasPerm('PRODUCTS') && (
+                        <button className={`nav-link ${activeTab === 'products' ? 'active' : ''}`} onClick={() => handleTabChange('products')} title={isSidebarCollapsed ? "Sản phẩm" : ""}>
+                            <i className="bi bi-box-seam"></i><span className="sidebar-text">Sản phẩm</span>
+                        </button>
+                    )}
+                    {hasPerm('CATEGORIES') && (
+                        <button className={`nav-link ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => handleTabChange('categories')} title={isSidebarCollapsed ? "Danh mục" : ""}>
+                            <i className="bi bi-tags"></i><span className="sidebar-text">Danh mục</span>
+                        </button>
+                    )}
+                    {hasPerm('REVIEWS') && (
+                        <button className={`nav-link ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => handleTabChange('reviews')} title={isSidebarCollapsed ? "Đánh giá" : ""}>
+                            <i className="bi bi-chat-left-dots"></i><span className="sidebar-text">Đánh giá</span>
+                        </button>
+                    )}
                 </div>
 
                 <div className="admin-sidebar-footer mt-auto pt-3 border-top">
-                    <Link to="/admin/product/add" className={`btn btn-success w-100 rounded-pill btn-sm mb-2 py-2 fw-bold ${isSidebarCollapsed ? 'px-0' : ''}`} title={isSidebarCollapsed ? "Thêm Sản Phẩm" : ""}>
-                        <i className={`bi bi-plus-circle ${isSidebarCollapsed ? 'fs-5' : 'me-1'}`}></i>
-                        <span className="sidebar-text">Thêm Sản Phẩm</span>
-                    </Link>
-                    <button onClick={handleExportExcel} disabled={isExporting} className={`btn btn-outline-success w-100 rounded-pill btn-sm mb-2 py-2 fw-bold ${isSidebarCollapsed ? 'px-0' : ''}`} title={isSidebarCollapsed ? "Xuất Excel" : ""}>
-                        {isExporting ? <i className="bi bi-hourglass-split"></i> : <><i className={`bi bi-file-earmark-excel ${isSidebarCollapsed ? 'fs-5' : 'me-1'}`}></i><span className="sidebar-text">Xuất Excel</span></>}
-                    </button>
+                    {hasPerm('PRODUCTS') && (
+                        <Link to="/admin/product/add" className={`btn btn-success w-100 rounded-pill btn-sm mb-2 py-2 fw-bold ${isSidebarCollapsed ? 'px-0' : ''}`} title={isSidebarCollapsed ? "Thêm Sản Phẩm" : ""}>
+                            <i className={`bi bi-plus-circle ${isSidebarCollapsed ? 'fs-5' : 'me-1'}`}></i>
+                            <span className="sidebar-text">Thêm Sản Phẩm</span>
+                        </Link>
+                    )}
+                    {hasPerm('DASHBOARD') && (
+                        <button onClick={handleExportExcel} disabled={isExporting} className={`btn btn-outline-success w-100 rounded-pill btn-sm mb-2 py-2 fw-bold ${isSidebarCollapsed ? 'px-0' : ''}`} title={isSidebarCollapsed ? "Xuất Excel" : ""}>
+                            {isExporting ? <i className="bi bi-hourglass-split"></i> : <><i className={`bi bi-file-earmark-excel ${isSidebarCollapsed ? 'fs-5' : 'me-1'}`}></i><span className="sidebar-text">Xuất Excel</span></>}
+                        </button>
+                    )}
                     <Link to="/" className={`btn btn-outline-dark w-100 rounded-pill btn-sm py-2 fw-bold mt-2 ${isSidebarCollapsed ? 'px-0' : ''}`} title={isSidebarCollapsed ? "Về Trang Chủ" : ""}>
                         <i className={`bi bi-house-door-fill ${isSidebarCollapsed ? 'fs-5' : 'd-none'}`}></i>
                         <span className="sidebar-text">Về Trang Chủ</span>
@@ -402,7 +455,7 @@ const AdminDashboardPage = () => {
                 <div className="tab-content">
                     
                     {/* TAB 1: TỔNG QUAN */}
-                    {activeTab === 'overview' && (
+                    {activeTab === 'overview' && hasPerm('DASHBOARD') && (
                         <div className="tab-pane show active animate__animated animate__fadeIn">
                             <h3 className="fw-bold text-success mb-4 border-start border-success border-4 ps-2">TỔNG QUAN HỆ THỐNG</h3>
                             
@@ -449,7 +502,7 @@ const AdminDashboardPage = () => {
                     )}
 
                     {/* TAB 2: QUẢN LÝ TÀI KHOẢN */}
-                    {activeTab === 'users' && (
+                    {activeTab === 'users' && hasPerm('USERS') && (
                         <div className="tab-pane show active animate__animated animate__fadeIn">
                             <div className="card border-0 shadow-sm rounded-4 overflow-hidden pb-2 bg-white">
                                 
@@ -488,31 +541,47 @@ const AdminDashboardPage = () => {
                                         </thead>
                                         <tbody>
                                             {Array.isArray(data.users) && data.users.length > 0 ? (
-                                                data.users.map(u => (
-                                                    <tr key={u._id} className={u.isBlocked ? 'bg-light' : ''}>
-                                                        <td className="ps-4 text-start">
-                                                            <div className="d-flex align-items-center">
-                                                                <div className={`fw-bold rounded-circle d-flex align-items-center justify-content-center me-3 text-white ${u.isAdmin ? 'bg-success' : 'bg-primary'}`} style={{ width: '38px', height: '38px' }}>
-                                                                    {u.lastName?.charAt(0)}
+                                                data.users.map(u => {
+                                                    const canEdit = user?.isSuperAdmin || user?._id === u._id || (!u.isAdmin && !u.isSuperAdmin);
+                                                    return (
+                                                        <tr key={u._id} className={u.isBlocked ? 'bg-light' : ''}>
+                                                            <td className="ps-4 text-start">
+                                                                <div className="d-flex align-items-center">
+                                                                    <div className={`fw-bold rounded-circle d-flex align-items-center justify-content-center me-3 text-white ${u.isSuperAdmin ? 'bg-danger' : (u.isAdmin ? 'bg-success' : 'bg-primary')}`} style={{ width: '38px', height: '38px' }}>
+                                                                        {u.lastName?.charAt(0)}
+                                                                    </div>
+                                                                    <div>
+                                                                        <h6 className="mb-0 fw-bold d-flex align-items-center">
+                                                                            {u.lastName} {u.firstName} 
+                                                                            {user?._id === u._id && <span className="badge bg-secondary ms-2" style={{fontSize:'9px'}}>Bạn</span>}
+                                                                        </h6>
+                                                                        <small className="text-muted" style={{ fontSize: '11px' }}>{u.email}</small>
+                                                                    </div>
                                                                 </div>
-                                                                <div>
-                                                                    <h6 className="mb-0 fw-bold">{u.lastName} {u.firstName}</h6>
-                                                                    <small className="text-muted" style={{ fontSize: '11px' }}>{u.email}</small>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="fw-bold">{u.phone}</td>
-                                                        <td>
-                                                            {u.isAdmin ? <span className="badge bg-success px-3 py-2 rounded-pill">Admin</span> : <span className="badge bg-secondary px-3 py-2 rounded-pill">Khách</span>}
-                                                        </td>
-                                                        <td>
-                                                            {u.isBlocked ? <span className="badge bg-danger px-3 py-2 rounded-pill"><i className="bi bi-lock-fill me-1"></i>Khóa</span> : <span className="badge bg-info text-white px-3 py-2 rounded-pill">Hoạt động</span>}
-                                                        </td>
-                                                        <td>
-                                                            <Link to={`/admin/user/edit/${u._id}`} className="btn btn-sm btn-action btn-outline-primary shadow-sm"><i className="bi bi-pencil-square"></i> Cập nhật</Link>
-                                                        </td>
-                                                    </tr>
-                                                ))
+                                                            </td>
+                                                            <td className="fw-bold">{u.phone}</td>
+                                                            <td>
+                                                                {u.isSuperAdmin ? (
+                                                                    <span className="badge bg-danger px-3 py-2 rounded-pill"><i className="bi bi-star-fill me-1"></i>Super Admin</span>
+                                                                ) : u.isAdmin ? (
+                                                                    <span className="badge bg-success px-3 py-2 rounded-pill">Admin</span>
+                                                                ) : (
+                                                                    <span className="badge bg-secondary px-3 py-2 rounded-pill">Khách</span>
+                                                                )}
+                                                            </td>
+                                                            <td>
+                                                                {u.isBlocked ? <span className="badge bg-danger px-3 py-2 rounded-pill"><i className="bi bi-lock-fill me-1"></i>Khóa</span> : <span className="badge bg-info text-white px-3 py-2 rounded-pill">Hoạt động</span>}
+                                                            </td>
+                                                            <td>
+                                                                {canEdit ? (
+                                                                    <Link to={`/admin/user/edit/${u._id}`} className="btn btn-sm btn-action btn-outline-primary shadow-sm"><i className="bi bi-pencil-square"></i> Cập nhật</Link>
+                                                                ) : (
+                                                                    <button className="btn btn-sm btn-action btn-outline-secondary shadow-sm disabled" title="Không đủ thẩm quyền"><i className="bi bi-shield-lock-fill"></i> Vô hiệu</button>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })
                                             ) : (
                                                 <tr><td colSpan="5" className="py-4 text-muted fst-italic">Không tìm thấy tài khoản nào!</td></tr>
                                             )}
@@ -525,7 +594,7 @@ const AdminDashboardPage = () => {
                     )}
 
                     {/* TAB 3: ĐƠN HÀNG */}
-                    {activeTab === 'orders' && (
+                    {activeTab === 'orders' && hasPerm('ORDERS') && (
                         <div className="tab-pane show active animate__animated animate__fadeIn">
                             <div className="card border-0 shadow-sm rounded-4 overflow-hidden pb-2 bg-white">
                                 <div className="card-header bg-white py-3 border-bottom">
@@ -594,7 +663,7 @@ const AdminDashboardPage = () => {
                     )}
 
                     {/* TAB 4: SẢN PHẨM */}
-                    {activeTab === 'products' && (
+                    {activeTab === 'products' && hasPerm('PRODUCTS') && (
                         <div className="tab-pane show active animate__animated animate__fadeIn">
                             <div className="card border-0 shadow-sm rounded-4 overflow-hidden pb-2 bg-white">
                                 <div className="card-header bg-white py-3 border-bottom">
@@ -656,7 +725,7 @@ const AdminDashboardPage = () => {
                     )}
 
                     {/* TAB 5: DANH MỤC */}
-                    {activeTab === 'categories' && (
+                    {activeTab === 'categories' && hasPerm('CATEGORIES') && (
                         <div className="tab-pane show active animate__animated animate__fadeIn">
                             <div className="card border-0 shadow-sm rounded-4 overflow-hidden pb-2 bg-white">
                                 <div className="card-header bg-white py-3 border-bottom">
@@ -707,7 +776,7 @@ const AdminDashboardPage = () => {
                     )}
 
                     {/* TAB 6: ĐÁNH GIÁ */}
-                    {activeTab === 'reviews' && (
+                    {activeTab === 'reviews' && hasPerm('REVIEWS') && (
                         <div className="tab-pane show active animate__animated animate__fadeIn">
                             <div className="card border-0 shadow-sm rounded-4 overflow-hidden pb-2 bg-white">
                                 <div className="card-header bg-white py-3 border-bottom">

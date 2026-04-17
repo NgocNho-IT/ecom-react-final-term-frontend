@@ -3,6 +3,16 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import API from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 
+// BẢNG DANH SÁCH CÁC QUYỀN MODULE TRONG HỆ THỐNG
+const MODULE_PERMISSIONS = [
+    { id: 'DASHBOARD', name: 'Xem Tổng quan (Thống kê)', icon: 'bi-graph-up' },
+    { id: 'USERS', name: 'Quản lý Tài khoản', icon: 'bi-people' },
+    { id: 'ORDERS', name: 'Quản lý Đơn hàng', icon: 'bi-cart3' },
+    { id: 'PRODUCTS', name: 'Quản lý Sản phẩm', icon: 'bi-box-seam' },
+    { id: 'CATEGORIES', name: 'Quản lý Danh mục', icon: 'bi-tags' },
+    { id: 'REVIEWS', name: 'Kiểm duyệt Đánh giá', icon: 'bi-chat-left-dots' }
+];
+
 const AdminUserEditPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -14,8 +24,10 @@ const AdminUserEditPage = () => {
         firstName: '', lastName: '', email: '', phone: ''
     });
     
-    // State mới cho việc đổi mật khẩu
     const [newPassword, setNewPassword] = useState('');
+    
+    // State lưu mảng quyền của user đang được edit
+    const [selectedPermissions, setSelectedPermissions] = useState([]);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -29,6 +41,8 @@ const AdminUserEditPage = () => {
                         email: data.user.email,
                         phone: data.user.phone
                     });
+                    // Lấy mảng quyền từ database lên
+                    setSelectedPermissions(data.user.permissions || []);
                 }
                 setLoading(false);
             } catch (error) {
@@ -47,12 +61,23 @@ const AdminUserEditPage = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    // Xử lý khi bật/tắt nút quyền
+    const handleTogglePermission = (moduleId) => {
+        if (selectedPermissions.includes(moduleId)) {
+            setSelectedPermissions(selectedPermissions.filter(p => p !== moduleId));
+        } else {
+            setSelectedPermissions([...selectedPermissions, moduleId]);
+        }
+    };
+
     const handleSaveInfo = async (e) => {
         e.preventDefault();
         try {
-            const { data } = await API.put(`/admin/user/${id}`, formData);
+            // Gộp cả formData và permissions để gửi lên Backend
+            const payload = { ...formData, permissions: selectedPermissions };
+            const { data } = await API.put(`/admin/user/${id}`, payload);
             if (data.success) {
-                alert("Cập nhật thông tin thành công!");
+                alert("Cập nhật thông tin & Quyền hạn thành công!");
                 setTargetUser(data.user);
             }
         } catch (error) {
@@ -60,7 +85,6 @@ const AdminUserEditPage = () => {
         }
     };
 
-    // HÀM MỚI: XỬ LÝ ĐỔI MẬT KHẨU
     const handleChangePassword = async (e) => {
         e.preventDefault();
         if (!newPassword || newPassword.length < 5) {
@@ -131,7 +155,26 @@ const AdminUserEditPage = () => {
         </div>
     );
 
+    // ====================================================
+    // LOGIC PHÂN QUYỀN HIỂN THỊ (UI ROLE-BASED ACCESS)
+    // ====================================================
     const isSelf = currentUser && currentUser._id === targetUser._id;
+    const isCurrentUserSuperAdmin = currentUser?.isSuperAdmin;
+    const isTargetAdminOrSuper = targetUser.isAdmin || targetUser.isSuperAdmin;
+
+    // 1. Quyền cấp/gỡ Admin: Chỉ Super Admin
+    const canEditRole = isCurrentUserSuperAdmin && !isSelf && !targetUser.isSuperAdmin; 
+    
+    // 2. Quyền Khóa (Block): SuperAdmin khóa mọi người (trừ SuperAdmin), Sub-Admin khóa được Khách
+    const canBlock = isCurrentUserSuperAdmin 
+        ? (!isSelf && !targetUser.isSuperAdmin) 
+        : (!isTargetAdminOrSuper && !isSelf);
+
+    // 3. Quyền XÓA (Delete): ĐỘC QUYỀN CỦA SUPER ADMIN
+    const canDelete = isCurrentUserSuperAdmin && !isSelf && !targetUser.isSuperAdmin;
+
+    // 4. Quyền Sửa thông tin: SuperAdmin sửa mọi người, Sub-Admin sửa Khách
+    const canEditInfo = isCurrentUserSuperAdmin || isSelf || !isTargetAdminOrSuper;
 
     return (
         <div style={fullScreenStyle}>
@@ -169,6 +212,10 @@ const AdminUserEditPage = () => {
                         box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.15);
                         outline: none;
                     }
+                    .custom-input:disabled {
+                        background-color: #e9ecef;
+                        cursor: not-allowed;
+                    }
                     .btn-action-outline {
                         border-width: 2px;
                         font-weight: 600;
@@ -191,6 +238,16 @@ const AdminUserEditPage = () => {
                         font-size: 13px;
                         padding: 8px 16px;
                         font-weight: 600;
+                    }
+                    .perm-card { 
+                        border: 1px solid #e0e0e0; 
+                        border-radius: 12px; 
+                        transition: all 0.2s; 
+                    }
+                    .perm-card.active { 
+                        border-color: #198754; 
+                        background-color: #f8fffb; 
+                        box-shadow: 0 4px 6px rgba(25,135,84,0.05);
                     }
                 `}
             </style>
@@ -227,40 +284,85 @@ const AdminUserEditPage = () => {
                     {/* CỘT TRÁI: FORM CHỈNH SỬA THÔNG TIN */}
                     {/* ========================================= */}
                     <div className="col-lg-8">
-                        <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4 bg-white">
-                            <h5 className="fw-bold mb-4 text-dark"><i className="bi bi-person-lines-fill me-2 text-success"></i>Cập nhật thông tin cá nhân</h5>
-                            
-                            <form onSubmit={handleSaveInfo}>
+                        <form onSubmit={handleSaveInfo}>
+                            {/* BLOCK 1: THÔNG TIN CÁ NHÂN */}
+                            <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4 bg-white">
+                                <h5 className="fw-bold mb-4 text-dark"><i className="bi bi-person-lines-fill me-2 text-success"></i>Cập nhật thông tin cá nhân</h5>
+                                
                                 <div className="row mb-4">
                                     <div className="col-md-6">
                                         <label className="form-label text-muted fw-bold small text-uppercase">Họ khách hàng</label>
-                                        <input type="text" className="form-control rounded-3 custom-input" name="lastName" value={formData.lastName} onChange={handleInputChange} required />
+                                        <input type="text" className="form-control rounded-3 custom-input" name="lastName" value={formData.lastName} onChange={handleInputChange} required disabled={!canEditInfo} />
                                     </div>
                                     <div className="col-md-6 mt-3 mt-md-0">
                                         <label className="form-label text-muted fw-bold small text-uppercase">Tên khách hàng</label>
-                                        <input type="text" className="form-control rounded-3 custom-input" name="firstName" value={formData.firstName} onChange={handleInputChange} required />
+                                        <input type="text" className="form-control rounded-3 custom-input" name="firstName" value={formData.firstName} onChange={handleInputChange} required disabled={!canEditInfo} />
                                     </div>
                                 </div>
                                 
                                 <div className="mb-4">
                                     <label className="form-label text-muted fw-bold small text-uppercase">Địa chỉ Email</label>
-                                    <input type="email" className="form-control rounded-3 custom-input" name="email" value={formData.email} onChange={handleInputChange} required />
+                                    <input type="email" className="form-control rounded-3 custom-input" name="email" value={formData.email} onChange={handleInputChange} required disabled={!canEditInfo} />
                                 </div>
                                 
-                                <div className="mb-5">
+                                <div>
                                     <label className="form-label text-muted fw-bold small text-uppercase">Số điện thoại liên hệ</label>
-                                    <input type="text" className="form-control rounded-3 custom-input" name="phone" value={formData.phone} onChange={handleInputChange} required />
+                                    <input type="text" className="form-control rounded-3 custom-input" name="phone" value={formData.phone} onChange={handleInputChange} required disabled={!canEditInfo} />
                                 </div>
-                                
-                                <div className="text-end">
-                                    <button type="submit" className="btn btn-success btn-lg px-5 rounded-pill fw-bold shadow-sm">
-                                        <i className="bi bi-check-circle-fill me-2"></i>Lưu Thông Tin
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            </div>
 
-                        {/* MỚI THÊM: CARD ĐỔI MẬT KHẨU TÁCH BIỆT */}
+                            {/* BLOCK 2: PHÂN QUYỀN MODULE (CHỈ HIỆN CHO ADMIN THƯỜNG) */}
+                            {targetUser.isAdmin && !targetUser.isSuperAdmin && (
+                                <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4 bg-white">
+                                    <div className="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 className="fw-bold text-dark mb-0"><i className="bi bi-ui-checks-grid me-2 text-primary"></i>Phân quyền Module (Dành cho Admin)</h5>
+                                    </div>
+                                    <p className="text-muted small mb-4">Lựa chọn các chức năng mà nhân viên này được phép truy cập và quản lý.</p>
+                                    
+                                    <div className="row g-3">
+                                        {MODULE_PERMISSIONS.map(mod => {
+                                            const isActive = selectedPermissions.includes(mod.id);
+                                            return (
+                                                <div className="col-md-6" key={mod.id}>
+                                                    <div className={`perm-card p-3 d-flex align-items-center justify-content-between ${isActive ? 'active' : ''}`}>
+                                                        <div className="d-flex align-items-center">
+                                                            <i className={`bi ${mod.icon} fs-4 me-3 ${isActive ? 'text-success' : 'text-muted'}`}></i>
+                                                            <span className={`fw-bold ${isActive ? 'text-success' : 'text-secondary'}`}>{mod.name}</span>
+                                                        </div>
+                                                        <div className="form-check form-switch m-0">
+                                                            <input 
+                                                                className="form-check-input cursor-pointer" 
+                                                                type="checkbox" 
+                                                                role="switch" 
+                                                                style={{ transform: 'scale(1.3)' }}
+                                                                checked={isActive}
+                                                                onChange={() => handleTogglePermission(mod.id)}
+                                                                disabled={!isCurrentUserSuperAdmin} // Chỉ Super Admin được phép gạt nút
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    {!isCurrentUserSuperAdmin && (
+                                        <div className="mt-3 text-danger small fw-bold">
+                                            <i className="bi bi-exclamation-triangle-fill me-1"></i>
+                                            Chỉ Quản trị viên Tối cao (Super Admin) mới có quyền thay đổi các thông số này.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* NÚT LƯU CHO CẢ THÔNG TIN VÀ PHÂN QUYỀN */}
+                            <div className="text-end mb-5">
+                                <button type="submit" className="btn btn-success btn-lg px-5 rounded-pill fw-bold shadow-sm" disabled={!canEditInfo}>
+                                    <i className="bi bi-check-circle-fill me-2"></i>Lưu Thay Đổi
+                                </button>
+                            </div>
+                        </form>
+
+                        {/* CARD ĐỔI MẬT KHẨU TÁCH BIỆT */}
                         <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
                             <h5 className="fw-bold mb-3 text-dark"><i className="bi bi-key-fill me-2 text-warning"></i>Cấp lại mật khẩu mới</h5>
                             <p className="text-muted small mb-4">Nhập mật khẩu mới bên dưới để thiết lập lại quyền truy cập cho người dùng này. Mã hóa tự động 256-bit.</p>
@@ -275,10 +377,11 @@ const AdminUserEditPage = () => {
                                             placeholder="Nhập ít nhất 5 ký tự..." 
                                             value={newPassword} 
                                             onChange={(e) => setNewPassword(e.target.value)} 
+                                            disabled={!canEditInfo}
                                         />
                                     </div>
                                     <div className="col-md-4 text-end">
-                                        <button type="submit" className="btn btn-warning w-100 rounded-3 fw-bold shadow-sm" disabled={isSelf}>
+                                        <button type="submit" className="btn btn-warning w-100 rounded-3 fw-bold shadow-sm" disabled={!canEditInfo}>
                                             Cập Nhật Mật Khẩu
                                         </button>
                                     </div>
@@ -299,9 +402,11 @@ const AdminUserEditPage = () => {
                             <div className="mb-4">
                                 <div className="info-row">
                                     <span className="text-muted fw-bold small">Vai trò:</span>
-                                    {targetUser.isAdmin 
-                                        ? <span className="badge bg-primary bg-opacity-10 text-primary badge-status rounded-pill"><i className="bi bi-star-fill me-1"></i> Quản trị viên</span> 
-                                        : <span className="badge bg-secondary bg-opacity-10 text-secondary badge-status rounded-pill"><i className="bi bi-person-fill me-1"></i> Khách hàng</span>
+                                    {targetUser.isSuperAdmin 
+                                        ? <span className="badge bg-danger bg-opacity-10 text-danger badge-status rounded-pill"><i className="bi bi-star-fill me-1"></i> Super Admin</span>
+                                        : targetUser.isAdmin 
+                                            ? <span className="badge bg-primary bg-opacity-10 text-primary badge-status rounded-pill"><i className="bi bi-shield-fill-check me-1"></i> Quản trị viên</span> 
+                                            : <span className="badge bg-secondary bg-opacity-10 text-secondary badge-status rounded-pill"><i className="bi bi-person-fill me-1"></i> Khách hàng</span>
                                     }
                                 </div>
                                 <div className="info-row">
@@ -318,8 +423,8 @@ const AdminUserEditPage = () => {
                                 <button 
                                     className={`btn btn-action-outline rounded-3 py-2 ${targetUser.isAdmin ? 'btn-outline-warning text-dark' : 'btn-outline-primary'}`} 
                                     onClick={handleToggleRole}
-                                    disabled={isSelf}
-                                    title={isSelf ? "Không thể tự gỡ quyền của mình" : ""}
+                                    disabled={!canEditRole}
+                                    title={!canEditRole ? "Chỉ Super Admin mới có quyền này" : ""}
                                 >
                                     <i className={`bi ${targetUser.isAdmin ? 'bi-arrow-down-circle' : 'bi-arrow-up-circle'} me-2`}></i>
                                     {targetUser.isAdmin ? 'Hạ cấp Khách hàng' : 'Cấp quyền Admin'}
@@ -329,19 +434,19 @@ const AdminUserEditPage = () => {
                                 <button 
                                     className={`btn btn-action-outline rounded-3 py-2 ${targetUser.isBlocked ? 'btn-outline-info' : 'btn-outline-dark'}`} 
                                     onClick={handleToggleBlock}
-                                    disabled={isSelf}
-                                    title={isSelf ? "Không thể tự khóa tài khoản của mình" : ""}
+                                    disabled={!canBlock}
+                                    title={!canBlock ? "Bạn không có quyền khóa tài khoản này" : ""}
                                 >
                                     <i className={`bi ${targetUser.isBlocked ? 'bi-unlock-fill' : 'bi-lock-fill'} me-2`}></i>
                                     {targetUser.isBlocked ? 'Mở khóa tài khoản' : 'Cấm truy cập'}
                                 </button>
 
-                                {/* Nút Xóa */}
+                                {/* Nút Xóa ĐÃ ĐƯỢC CHẶN LẠI VÀ THÔNG BÁO RÕ RÀNG */}
                                 <button 
                                     className="btn btn-action-outline btn-outline-danger rounded-3 py-2 mt-2" 
                                     onClick={handleDelete}
-                                    disabled={targetUser.isAdmin}
-                                    title={targetUser.isAdmin ? "Không thể xóa Quản trị viên" : ""}
+                                    disabled={!canDelete}
+                                    title={!canDelete ? "Hệ thống: Chỉ Super Admin mới có quyền Xóa tài khoản!" : ""}
                                 >
                                     <i className="bi bi-trash3-fill me-2"></i>Xóa vĩnh viễn
                                 </button>
